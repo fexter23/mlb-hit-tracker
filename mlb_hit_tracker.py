@@ -135,9 +135,9 @@ if os.path.exists(daily_file) and selected_game:
                                 hide_index=True,
                                 column_config={
                                     "player": st.column_config.TextColumn("Player"),
-                                    "over_0.5_H": st.column_config.NumberColumn("% >0.5 H", format="%.1f%%"),
-                                    "over_1.5_H": st.column_config.NumberColumn("% >1.5 H", format="%.1f%%"),
-                                    "avg_hit_rate": st.column_config.NumberColumn("Avg Rate", format="%.1f%%"),
+                                    "over_0.5_H": st.column_config.NumberColumn(">0.5", format="%.1f%%"),
+                                    "over_1.5_H": st.column_config.NumberColumn(">1.5", format="%.1f%%"),
+                                    "avg_hit_rate": st.column_config.NumberColumn("Avg", format="%.1f%%"),
                                 }
                             )
 
@@ -154,9 +154,9 @@ if os.path.exists(daily_file) and selected_game:
                                 hide_index=True,
                                 column_config={
                                     "player": st.column_config.TextColumn("Player"),
-                                    "over_0.5_K": st.column_config.NumberColumn("% >0.5 K", format="%.1f%%"),
-                                    "over_1.5_K": st.column_config.NumberColumn("% >1.5 K", format="%.1f%%"),
-                                    "avg_hit_rate": st.column_config.NumberColumn("Avg Rate", format="%.1f%%"),
+                                    "over_0.5_K": st.column_config.NumberColumn(">0.5", format="%.1f%%"),
+                                    "over_1.5_K": st.column_config.NumberColumn(">1.5", format="%.1f%%"),
+                                    "avg_hit_rate": st.column_config.NumberColumn("Avg", format="%.1f%%"),
                                 }
                             )
 
@@ -170,7 +170,7 @@ if os.path.exists(daily_file) and selected_game:
                                 hide_index=True,
                                 column_config={
                                     "player": st.column_config.TextColumn("Player"),
-                                    "over_1.5_HRR": st.column_config.NumberColumn("% >1.5 HRR", format="%.1f%%"),
+                                    "over_1.5_HRR": st.column_config.NumberColumn(">1.5", format="%.1f%%"),
                                 }
                             )
 
