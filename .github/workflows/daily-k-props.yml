@@ -2,11 +2,8 @@ name: Daily MLB Strikeout Props
 
 on:
   schedule:
-    # Runs every day at 6:00 AM UTC (~2 AM EDT)
-    - cron: '0 6 * * *'
-  
-  # Allows manual trigger from GitHub Actions tab
-  workflow_dispatch:
+    - cron: '0 6 * * *'     # Every day at 6:00 AM UTC (~2 AM EDT)
+  workflow_dispatch:        # Allows manual run
 
 jobs:
   compute-k-props:
@@ -16,7 +13,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Fetch full history so git commit works properly
           fetch-depth: 0
 
       - name: Set up Python
@@ -33,19 +29,21 @@ jobs:
       - name: Run daily strikeout props computation
         run: python compute_daily_k_props.py
 
-      - name: Commit and push updated daily_k_props.json (if changed)
+      - name: Commit and push daily_k_props.json
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Only commit if there are actual changes
-          if git diff --quiet daily_k_props.json; then
-            echo "No changes to daily_k_props.json"
+          # Force add the file (even if new or unchanged)
+          git add daily_k_props.json
+          
+          # Commit only if there are changes (or it's a new file)
+          if git diff --staged --quiet; then
+            echo "No changes to daily_k_props.json - skipping commit"
           else
-            git add daily_k_props.json
             git commit -m "Update daily K props for $(date +'%Y-%m-%d')"
             git push
-            echo "✅ Updated and pushed daily_k_props.json"
+            echo "✅ Successfully committed and pushed daily_k_props.json"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
