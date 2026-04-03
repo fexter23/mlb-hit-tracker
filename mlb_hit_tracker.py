@@ -412,12 +412,11 @@ with tab_parlays:
     for game, avg_rate, legs in parlay_data:
         game_label = f"{game['awayTeam']} @ {game['homeTeam']}"
 
-        with st.expander(f"⚾ {game_label}", expanded=(len(games_to_show) == 1)):
-            if not legs:
-                st.warning("Not enough data to suggest a parlay for this game.")
-                continue
+        st.markdown(f"#### ⚾ {game_label}")
 
-            # Confidence badge colour
+        if not legs:
+            st.warning("Not enough data to suggest a parlay for this game.")
+        else:
             badge_color = "#00ff88" if avg_rate >= 80 else "#ffcc00" if avg_rate >= 65 else "#ff5555"
             st.markdown(
                 f"<div style='margin-bottom:12px;'>"
@@ -437,4 +436,4 @@ with tab_parlays:
                     unsafe_allow_html=True
                 )
 
-            st.divider()
+        st.divider()
