@@ -1,7 +1,7 @@
 {
   "date": "2026-04-03",
-  "generated_at": "2026-04-03T17:59:18.521705",
-  "total_qualifiers": 133,
+  "generated_at": "2026-04-03T18:37:00.723692",
+  "total_qualifiers": 125,
   "batters": [
     {
       "player": "Giancarlo Stanton (NYY)",
@@ -164,16 +164,6 @@
       "player_id": 643289
     },
     {
-      "player": "Ernie Clement (TOR)",
-      "over_0.5_H": 83.3,
-      "over_1.5_H": 50.0,
-      "over_0.5_K": 16.7,
-      "over_1.5_K": 0.0,
-      "over_1.5_HRR": 66.7,
-      "games_considered": 6,
-      "player_id": 676391
-    },
-    {
       "player": "Juan Soto (NYM)",
       "over_0.5_H": 100.0,
       "over_1.5_H": 42.9,
@@ -252,16 +242,6 @@
       "over_1.5_HRR": 40.0,
       "games_considered": 5,
       "player_id": 664728
-    },
-    {
-      "player": "Jesús Sánchez (TOR)",
-      "over_0.5_H": 80.0,
-      "over_1.5_H": 40.0,
-      "over_0.5_K": 40.0,
-      "over_1.5_K": 0.0,
-      "over_1.5_HRR": 80.0,
-      "games_considered": 5,
-      "player_id": 660821
     },
     {
       "player": "Brandon Lockridge (MIL)",
@@ -354,6 +334,16 @@
       "player_id": 691016
     },
     {
+      "player": "Ben Rice (NYY)",
+      "over_0.5_H": 83.3,
+      "over_1.5_H": 33.3,
+      "over_0.5_K": 50.0,
+      "over_1.5_K": 33.3,
+      "over_1.5_HRR": 83.3,
+      "games_considered": 6,
+      "player_id": 700250
+    },
+    {
       "player": "JJ Wetherholt (STL)",
       "over_0.5_H": 83.3,
       "over_1.5_H": 33.3,
@@ -384,14 +374,14 @@
       "player_id": 668930
     },
     {
-      "player": "Ben Rice (NYY)",
+      "player": "CJ Abrams (WSH)",
       "over_0.5_H": 83.3,
       "over_1.5_H": 33.3,
-      "over_0.5_K": 33.3,
+      "over_0.5_K": 50.0,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 83.3,
       "games_considered": 6,
-      "player_id": 700250
+      "player_id": 682928
     },
     {
       "player": "Nolan Schanuel (LAA)",
@@ -472,16 +462,6 @@
       "over_1.5_HRR": 85.7,
       "games_considered": 7,
       "player_id": 686948
-    },
-    {
-      "player": "Jarren Duran (BOS)",
-      "over_0.5_H": 40.0,
-      "over_1.5_H": 20.0,
-      "over_0.5_K": 80.0,
-      "over_1.5_K": 40.0,
-      "over_1.5_HRR": 40.0,
-      "games_considered": 5,
-      "player_id": 680776
     },
     {
       "player": "Jeremiah Jackson (BAL)",
@@ -574,26 +554,6 @@
       "player_id": 605170
     },
     {
-      "player": "Kazuma Okamoto (TOR)",
-      "over_0.5_H": 100.0,
-      "over_1.5_H": 16.7,
-      "over_0.5_K": 100.0,
-      "over_1.5_K": 66.7,
-      "over_1.5_HRR": 66.7,
-      "games_considered": 6,
-      "player_id": 672960
-    },
-    {
-      "player": "Roman Anthony (BOS)",
-      "over_0.5_H": 50.0,
-      "over_1.5_H": 16.7,
-      "over_0.5_K": 83.3,
-      "over_1.5_K": 66.7,
-      "over_1.5_HRR": 50.0,
-      "games_considered": 6,
-      "player_id": 701350
-    },
-    {
       "player": "Brent Rooker (ATH)",
       "over_0.5_H": 50.0,
       "over_1.5_H": 16.7,
@@ -602,16 +562,6 @@
       "over_1.5_HRR": 33.3,
       "games_considered": 6,
       "player_id": 667670
-    },
-    {
-      "player": "Colson Montgomery (CWS)",
-      "over_0.5_H": 50.0,
-      "over_1.5_H": 16.7,
-      "over_0.5_K": 83.3,
-      "over_1.5_K": 50.0,
-      "over_1.5_HRR": 16.7,
-      "games_considered": 6,
-      "player_id": 695657
     },
     {
       "player": "Josh Lowe (LAA)",
@@ -674,22 +624,22 @@
       "player_id": 701807
     },
     {
-      "player": "CJ Abrams (WSH)",
-      "over_0.5_H": 83.3,
+      "player": "Austin Wells (NYY)",
+      "over_0.5_H": 33.3,
       "over_1.5_H": 16.7,
-      "over_0.5_K": 50.0,
-      "over_1.5_K": 16.7,
-      "over_1.5_HRR": 83.3,
+      "over_0.5_K": 83.3,
+      "over_1.5_K": 33.3,
+      "over_1.5_HRR": 16.7,
       "games_considered": 6,
-      "player_id": 682928
+      "player_id": 669224
     },
     {
       "player": "Dillon Dingler (DET)",
-      "over_0.5_H": 66.7,
+      "over_0.5_H": 83.3,
       "over_1.5_H": 16.7,
       "over_0.5_K": 83.3,
       "over_1.5_K": 16.7,
-      "over_1.5_HRR": 50.0,
+      "over_1.5_HRR": 66.7,
       "games_considered": 6,
       "player_id": 693307
     },
@@ -764,16 +714,6 @@
       "player_id": 678662
     },
     {
-      "player": "Tristan Peters (CWS)",
-      "over_0.5_H": 66.7,
-      "over_1.5_H": 16.7,
-      "over_0.5_K": 83.3,
-      "over_1.5_K": 16.7,
-      "over_1.5_HRR": 16.7,
-      "games_considered": 6,
-      "player_id": 671976
-    },
-    {
       "player": "Nick Fortes (TB)",
       "over_0.5_H": 83.3,
       "over_1.5_H": 16.7,
@@ -782,16 +722,6 @@
       "over_1.5_HRR": 66.7,
       "games_considered": 6,
       "player_id": 663743
-    },
-    {
-      "player": "Manny Machado (SD)",
-      "over_0.5_H": 66.7,
-      "over_1.5_H": 16.7,
-      "over_0.5_K": 83.3,
-      "over_1.5_K": 0.0,
-      "over_1.5_HRR": 50.0,
-      "games_considered": 6,
-      "player_id": 592518
     },
     {
       "player": "Nico Hoerner (CHC)",
@@ -814,6 +744,16 @@
       "player_id": 672580
     },
     {
+      "player": "Connor Norby (MIA)",
+      "over_0.5_H": 33.3,
+      "over_1.5_H": 16.7,
+      "over_0.5_K": 83.3,
+      "over_1.5_K": 0.0,
+      "over_1.5_HRR": 33.3,
+      "games_considered": 6,
+      "player_id": 681393
+    },
+    {
       "player": "Jake Meyers (HOU)",
       "over_0.5_H": 50.0,
       "over_1.5_H": 16.7,
@@ -822,6 +762,26 @@
       "over_1.5_HRR": 33.3,
       "games_considered": 6,
       "player_id": 676694
+    },
+    {
+      "player": "Kazuma Okamoto (TOR)",
+      "over_0.5_H": 85.7,
+      "over_1.5_H": 14.3,
+      "over_0.5_K": 85.7,
+      "over_1.5_K": 57.1,
+      "over_1.5_HRR": 57.1,
+      "games_considered": 7,
+      "player_id": 672960
+    },
+    {
+      "player": "Colson Montgomery (CWS)",
+      "over_0.5_H": 42.9,
+      "over_1.5_H": 14.3,
+      "over_0.5_K": 85.7,
+      "over_1.5_K": 42.9,
+      "over_1.5_HRR": 14.3,
+      "games_considered": 7,
+      "player_id": 695657
     },
     {
       "player": "Willy Adames (SF)",
@@ -874,16 +834,6 @@
       "player_id": 624585
     },
     {
-      "player": "Andrew Benintendi (CWS)",
-      "over_0.5_H": 60.0,
-      "over_1.5_H": 0.0,
-      "over_0.5_K": 80.0,
-      "over_1.5_K": 80.0,
-      "over_1.5_HRR": 20.0,
-      "games_considered": 5,
-      "player_id": 643217
-    },
-    {
       "player": "Brice Matthews (HOU)",
       "over_0.5_H": 40.0,
       "over_1.5_H": 0.0,
@@ -914,44 +864,44 @@
       "player_id": 663728
     },
     {
-      "player": "George Springer (TOR)",
-      "over_0.5_H": 66.7,
-      "over_1.5_H": 0.0,
-      "over_0.5_K": 83.3,
-      "over_1.5_K": 66.7,
-      "over_1.5_HRR": 50.0,
-      "games_considered": 6,
-      "player_id": 543807
-    },
-    {
-      "player": "Trevor Story (BOS)",
-      "over_0.5_H": 66.7,
+      "player": "Spencer Torkelson (DET)",
+      "over_0.5_H": 50.0,
       "over_1.5_H": 0.0,
       "over_0.5_K": 100.0,
       "over_1.5_K": 66.7,
-      "over_1.5_HRR": 33.3,
+      "over_1.5_HRR": 50.0,
       "games_considered": 6,
-      "player_id": 596115
+      "player_id": 679529
     },
     {
-      "player": "Austin Hays (CWS)",
-      "over_0.5_H": 60.0,
+      "player": "Andrew Benintendi (CWS)",
+      "over_0.5_H": 50.0,
       "over_1.5_H": 0.0,
-      "over_0.5_K": 80.0,
-      "over_1.5_K": 60.0,
-      "over_1.5_HRR": 20.0,
-      "games_considered": 5,
-      "player_id": 669720
+      "over_0.5_K": 83.3,
+      "over_1.5_K": 66.7,
+      "over_1.5_HRR": 16.7,
+      "games_considered": 6,
+      "player_id": 643217
     },
     {
       "player": "James Wood (WSH)",
       "over_0.5_H": 57.1,
       "over_1.5_H": 0.0,
-      "over_0.5_K": 85.7,
+      "over_0.5_K": 100.0,
       "over_1.5_K": 57.1,
       "over_1.5_HRR": 57.1,
       "games_considered": 7,
       "player_id": 695578
+    },
+    {
+      "player": "Trevor Story (BOS)",
+      "over_0.5_H": 57.1,
+      "over_1.5_H": 0.0,
+      "over_0.5_K": 85.7,
+      "over_1.5_K": 57.1,
+      "over_1.5_HRR": 28.6,
+      "games_considered": 7,
+      "player_id": 596115
     },
     {
       "player": "Heliot Ramos (SF)",
@@ -962,16 +912,6 @@
       "over_1.5_HRR": 28.6,
       "games_considered": 7,
       "player_id": 671218
-    },
-    {
-      "player": "Munetaka Murakami (CWS)",
-      "over_0.5_H": 83.3,
-      "over_1.5_H": 0.0,
-      "over_0.5_K": 83.3,
-      "over_1.5_K": 50.0,
-      "over_1.5_HRR": 83.3,
-      "games_considered": 6,
-      "player_id": 808959
     },
     {
       "player": "Eugenio Suárez (CIN)",
@@ -992,16 +932,6 @@
       "over_1.5_HRR": 66.7,
       "games_considered": 6,
       "player_id": 664023
-    },
-    {
-      "player": "Spencer Torkelson (DET)",
-      "over_0.5_H": 50.0,
-      "over_1.5_H": 0.0,
-      "over_0.5_K": 100.0,
-      "over_1.5_K": 50.0,
-      "over_1.5_HRR": 50.0,
-      "games_considered": 6,
-      "player_id": 679529
     },
     {
       "player": "Elly De La Cruz (CIN)",
@@ -1034,6 +964,16 @@
       "player_id": 672356
     },
     {
+      "player": "Munetaka Murakami (CWS)",
+      "over_0.5_H": 85.7,
+      "over_1.5_H": 0.0,
+      "over_0.5_K": 71.4,
+      "over_1.5_K": 42.9,
+      "over_1.5_HRR": 71.4,
+      "games_considered": 7,
+      "player_id": 808959
+    },
+    {
       "player": "Aaron Judge (NYY)",
       "over_0.5_H": 57.1,
       "over_1.5_H": 0.0,
@@ -1047,7 +987,7 @@
       "player": "Kerry Carpenter (DET)",
       "over_0.5_H": 42.9,
       "over_1.5_H": 0.0,
-      "over_0.5_K": 85.7,
+      "over_0.5_K": 100.0,
       "over_1.5_K": 42.9,
       "over_1.5_HRR": 14.3,
       "games_considered": 7,
@@ -1064,6 +1004,16 @@
       "player_id": 670042
     },
     {
+      "player": "Ramón Urías (STL)",
+      "over_0.5_H": 40.0,
+      "over_1.5_H": 0.0,
+      "over_0.5_K": 80.0,
+      "over_1.5_K": 40.0,
+      "over_1.5_HRR": 20.0,
+      "games_considered": 5,
+      "player_id": 602104
+    },
+    {
       "player": "Denzel Clarke (ATH)",
       "over_0.5_H": 40.0,
       "over_1.5_H": 0.0,
@@ -1072,16 +1022,6 @@
       "over_1.5_HRR": 20.0,
       "games_considered": 5,
       "player_id": 672016
-    },
-    {
-      "player": "Addison Barger (TOR)",
-      "over_0.5_H": 0.0,
-      "over_1.5_H": 0.0,
-      "over_0.5_K": 80.0,
-      "over_1.5_K": 40.0,
-      "over_1.5_HRR": 0.0,
-      "games_considered": 5,
-      "player_id": 680718
     },
     {
       "player": "Spencer Steer (CIN)",
@@ -1132,16 +1072,6 @@
       "over_1.5_HRR": 16.7,
       "games_considered": 6,
       "player_id": 695600
-    },
-    {
-      "player": "Ramón Urías (STL)",
-      "over_0.5_H": 40.0,
-      "over_1.5_H": 0.0,
-      "over_0.5_K": 80.0,
-      "over_1.5_K": 20.0,
-      "over_1.5_HRR": 20.0,
-      "games_considered": 5,
-      "player_id": 602104
     },
     {
       "player": "Javier Báez (DET)",
@@ -1202,16 +1132,6 @@
       "over_1.5_HRR": 83.3,
       "games_considered": 6,
       "player_id": 669357
-    },
-    {
-      "player": "Fernando Tatis Jr. (SD)",
-      "over_0.5_H": 83.3,
-      "over_1.5_H": 0.0,
-      "over_0.5_K": 66.7,
-      "over_1.5_K": 16.7,
-      "over_1.5_HRR": 66.7,
-      "games_considered": 6,
-      "player_id": 665487
     },
     {
       "player": "Carson Williams (TB)",
