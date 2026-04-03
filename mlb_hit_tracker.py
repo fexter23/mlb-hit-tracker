@@ -66,7 +66,6 @@ def get_player_info(player_id: int):
     except Exception:
         return None
 
-# Current season only
 @st.cache_data(ttl=3600)
 def get_game_log(player_id: int):
     current_year = datetime.datetime.now().year
@@ -85,41 +84,61 @@ st.set_page_config(page_title="MLB Batter Stats", page_icon="⚾", layout="wide"
 
 st.title("⚾ MLB Active Batter Recent Game Stats")
 
-# ====================== DAILY K PROP SUMMARY (NEW) ======================
-st.subheader("🔥 Today's Strikeout Prop Hot List")
-daily_file = "daily_k_props.json"
-if os.path.exists(daily_file):
-    try:
-        with open(daily_file, "r", encoding="utf-8") as f:
-            daily_data = json.load(f)
-        if daily_data.get("date") == datetime.date.today().strftime("%Y-%m-%d"):
-            daily_df = pd.DataFrame(daily_data.get("batters", []))
-            if not daily_df.empty:
-                st.dataframe(
-                    daily_df[["player", "over_0.5_K", "over_1.5_K", "avg_K_last10", "games_considered"]]
-                    .sort_values("over_1.5_K", ascending=False),
-                    use_container_width=True,
-                    hide_index=True,
-                    column_config={
-                        "over_0.5_K": st.column_config.NumberColumn("% >0.5 K", format="%.1f%%"),
-                        "over_1.5_K": st.column_config.NumberColumn("% >1.5 K", format="%.1f%%"),
-                        "avg_K_last10": st.column_config.NumberColumn("Avg K", format="%.2f"),
-                        "games_considered": st.column_config.NumberColumn("Games", format="%d"),
-                    }
-                )
-                st.caption(f"Pre-computed this morning • Last 10 games • Run compute_daily_k_props.py to refresh")
+# ====================== DAILY PROP HOT LIST (COLLAPSIBLE) ======================
+with st.expander("🔥 Today's Prop Hot List (≥80% Hit Rate - Last 10 Games)", expanded=False):
+    daily_file = "daily_k_props.json"
+
+    if os.path.exists(daily_file):
+        try:
+            with open(daily_file, "r", encoding="utf-8") as f:
+                daily_data = json.load(f)
+            
+            if daily_data.get("date") == datetime.date.today().strftime("%Y-%m-%d"):
+                daily_df = pd.DataFrame(daily_data.get("batters", []))
+                
+                if not daily_df.empty:
+                    display_df = daily_df[[
+                        "player",
+                        "over_0.5_H", "over_1.5_H",
+                        "over_0.5_K", "over_1.5_K",
+                        "over_1.5_HRR",
+                        "avg_H_last10", "avg_K_last10", "avg_HRR_last10",
+                        "games_considered"
+                    ]].copy()
+
+                    st.dataframe(
+                        display_df,
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            "player": st.column_config.TextColumn("Player"),
+                            "over_0.5_H": st.column_config.NumberColumn("% >0.5 H", format="%.1f%%"),
+                            "over_1.5_H": st.column_config.NumberColumn("% >1.5 H", format="%.1f%%"),
+                            "over_0.5_K": st.column_config.NumberColumn("% >0.5 K", format="%.1f%%"),
+                            "over_1.5_K": st.column_config.NumberColumn("% >1.5 K", format="%.1f%%"),
+                            "over_1.5_HRR": st.column_config.NumberColumn("% >1.5 H+R+RBI", format="%.1f%%"),
+                            "avg_H_last10": st.column_config.NumberColumn("Avg H", format="%.2f"),
+                            "avg_K_last10": st.column_config.NumberColumn("Avg K", format="%.2f"),
+                            "avg_HRR_last10": st.column_config.NumberColumn("Avg H+R+RBI", format="%.2f"),
+                            "games_considered": st.column_config.NumberColumn("Games", format="%d"),
+                        }
+                    )
+                    
+                    st.caption(f"✅ Updated today • Only players with ≥80% hit rate on at least one prop • Last 10 games")
+                else:
+                    st.info("No batters reached 80% hit rate on any prop today.")
             else:
-                st.info("No batters with data today.")
-        else:
-            st.warning("⚠️ Daily K props are outdated. Please run `python compute_daily_k_props.py`")
-    except Exception as e:
-        st.error(f"Could not load daily props: {e}")
-else:
-    st.info("👉 Run `python compute_daily_k_props.py` every morning to see today's K prop hit rates here!")
+                st.warning("⚠️ Daily props are outdated. Please run `python compute_daily_k_props.py`")
+        except Exception as e:
+            st.error(f"Could not load daily props: {e}")
+    else:
+        st.info("👉 Run `python compute_daily_k_props.py` (or let GitHub Actions run it) to generate the daily hot list.")
+
+st.divider()
 
 # ====================== SIDEBAR FILTERS ======================
 with st.sidebar:
-    st.header("🎮 Filters")
+    st.header("🎮 Individual Player Analysis")
     
     today_games = get_todays_games()
     if not today_games:
@@ -131,7 +150,6 @@ with st.sidebar:
     
     selected_game = next((g for g in today_games if g["display"] == selected_display), None)
     
-    # Build batter list
     batter_list = []
     if selected_game:
         with st.spinner("Loading active batters..."):
@@ -148,7 +166,6 @@ with st.sidebar:
         
         batter_list = sorted(batter_list, key=lambda x: x["name"])
     
-    # Player, Stat, Threshold on same row - compact
     if batter_list:
         player_options = [b["label"] for b in batter_list]
         
@@ -174,7 +191,6 @@ with st.sidebar:
             )
         
         with col3:
-            # Dynamic thresholds based on selected stat
             if selected_stat == "Strikeouts":
                 threshold_options = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
                 default_threshold = 2.5
@@ -195,7 +211,7 @@ with st.sidebar:
         threshold = None
 
 
-# ====================== MAIN AREA ======================
+# ====================== MAIN PLAYER ANALYSIS ======================
 if player_id:
     player_info = get_player_info(player_id)
 
@@ -236,7 +252,7 @@ if player_id:
             df = pd.DataFrame(records)
             df = df.sort_values("Date", ascending=False)
 
-            # ====================== PROP HIT RATE (OVER + UNDER) ======================
+            # ====================== PROP HIT RATE ======================
             if selected_stat and threshold is not None:
                 n_games = min(10, len(df))
                 pdata = df.head(n_games).copy()
@@ -255,15 +271,12 @@ if player_id:
                 over_pct = (over_count / n_games) * 100 if n_games > 0 else 0
                 under_pct = (under_count / n_games) * 100 if n_games > 0 else 0
 
-                # Colors
                 over_color = '#00ff88' if over_pct > 73 else '#ffcc00' if over_pct >= 60 else '#ff5555'
                 under_color = '#00ff88' if under_pct > 73 else '#ffcc00' if under_pct >= 60 else '#ff5555'
 
                 st.subheader(f"🎯 {selected_stat} > {threshold:.1f} — Last {n_games} Games")
 
-                # Hit Rate Display
                 col_o, col_u = st.columns(2)
-                
                 with col_o:
                     st.markdown(
                         f"<div style='text-align:center;'>"
@@ -273,7 +286,6 @@ if player_id:
                         f"</div>",
                         unsafe_allow_html=True
                     )
-                
                 with col_u:
                     st.markdown(
                         f"<div style='text-align:center;'>"
@@ -296,7 +308,7 @@ if player_id:
                             break
                     st.markdown(f"**Current streak:** {streak_type}{streak_count}")
 
-                # Bar chart with threshold
+                # Bar chart
                 fig_prop = px.bar(
                     pdata,
                     x="Date",
@@ -312,12 +324,7 @@ if player_id:
                     annotation_text=f"Threshold = {threshold:.1f}",
                     annotation_position="top right"
                 )
-                fig_prop.update_layout(
-                    height=380,
-                    margin=dict(t=60, b=30),
-                    yaxis_title=None,
-                    xaxis_title=None
-                )
+                fig_prop.update_layout(height=380, margin=dict(t=60, b=30), yaxis_title=None, xaxis_title=None)
                 fig_prop.update_xaxes(type='category')
                 st.plotly_chart(fig_prop, use_container_width=True)
 
@@ -362,7 +369,7 @@ if player_id:
     else:
         st.error("This player is a pitcher or invalid. Please select a batter.")
 else:
-    st.info("👈 Select a game and player from the sidebar to get started.")
+    st.info("👈 Select a game and player from the sidebar for detailed analysis.")
 
 st.divider()
-st.caption("Active batters only • Current season • Official MLB Stats API • Daily K props added")
+st.caption("Active batters only • Current season • Official MLB Stats API • Daily Hot List includes Hits, K, and H+R+RBI")
