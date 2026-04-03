@@ -1,7 +1,7 @@
 import requests
 import pandas as pd
 import datetime
-import json
+import streamlit as st
 
 # ====================== API FUNCTIONS ======================
 def get_todays_games():
@@ -26,8 +26,7 @@ def get_todays_games():
                     "homeId": home.get("id"),
                 })
         return games
-    except Exception as e:
-        print(f"Error fetching games: {e}")
+    except Exception:
         return []
 
 def get_team_active_roster(team_id: int):
@@ -61,16 +60,12 @@ def get_game_log(player_id: int):
     except Exception:
         return []
 
-
-# ====================== MAIN COMPUTE FUNCTION ======================
-def compute_daily_k_props():
-    today_str = datetime.date.today().strftime("%Y-%m-%d")
-    print(f"🚀 Computing daily prop hot lists for {today_str}...")
-
+# ====================== DATA PROCESSING ======================
+@st.cache_data(ttl=3600)
+def fetch_and_compute_props():
     today_games = get_todays_games()
     if not today_games:
-        print("❌ No games found for today.")
-        return
+        return pd.DataFrame()
 
     results = []
     for game in today_games:
@@ -78,100 +73,88 @@ def compute_daily_k_props():
         home_batters = get_team_active_roster(game["homeId"])
 
         batter_list = []
-        for b in away_batters:
-            batter_list.append((b["id"], b["fullName"], game["awayAbbrev"]))
-        for b in home_batters:
-            batter_list.append((b["id"], b["fullName"], game["homeAbbrev"]))
+        for b in away_batters: batter_list.append((b["id"], b["fullName"], game["awayAbbrev"]))
+        for b in home_batters: batter_list.append((b["id"], b["fullName"], game["homeAbbrev"]))
 
         for player_id, full_name, team_abbrev in batter_list:
             game_splits = get_game_log(player_id)
-            if len(game_splits) < 5:   # Require at least 5 games
-                continue
+            if len(game_splits) < 5: continue
 
             records = []
             for split in game_splits:
                 stat = split.get("stat", {})
-                hits = int(stat.get("hits", 0))
-                runs = int(stat.get("runs", 0))
-                rbi = int(stat.get("rbi", 0))
-                strikeouts = int(stat.get("strikeOuts", 0))
-                combined = hits + runs + rbi
+                h, r, rbi, k = int(stat.get("hits", 0)), int(stat.get("runs", 0)), int(stat.get("rbi", 0)), int(stat.get("strikeOuts", 0))
+                records.append({"H": h, "K": k, "HRR": h + r + rbi})
 
-                records.append({
-                    "H": hits,
-                    "K": strikeouts,
-                    "HRR": combined
-                })
+            df = pd.DataFrame(records).head(10)
+            n = len(df)
+            if n < 5: continue
 
-            if not records:
-                continue
+            # Calc percentages
+            stats_dict = {
+                "player": f"{full_name} ({team_abbrev})",
+                "over_0.5_H": round((df["H"] > 0.5).sum() / n * 100, 1),
+                "over_1.5_H": round((df["H"] > 1.5).sum() / n * 100, 1),
+                "over_0.5_K": round((df["K"] > 0.5).sum() / n * 100, 1),
+                "over_1.5_K": round((df["K"] > 1.5).sum() / n * 100, 1),
+                "over_1.5_HRR": round((df["HRR"] > 1.5).sum() / n * 100, 1),
+                "games_considered": n
+            }
 
-            df = pd.DataFrame(records)
-            pdata = df.head(10).copy()   # Last 10 games
-            n_games = len(pdata)
+            # Filter: 80% threshold on at least one
+            if any(v >= 80 for k, v in stats_dict.items() if k.startswith("over_")):
+                results.append(stats_dict)
 
-            if n_games < 5:
-                continue
+    return pd.DataFrame(results)
 
-            # Calculate percentages
-            over_05_h = (pdata["H"] > 0.5).sum() / n_games * 100
-            over_15_h = (pdata["H"] > 1.5).sum() / n_games * 100
-            over_05_k = (pdata["K"] > 0.5).sum() / n_games * 100
-            over_15_k = (pdata["K"] > 1.5).sum() / n_games * 100
-            over_15_hrr = (pdata["HRR"] > 1.5).sum() / n_games * 100
+# ====================== STREAMLIT UI ======================
+def main():
+    st.set_page_config(page_title="MLB Prop Lab", layout="wide")
+    st.title("⚾ MLB Daily Prop Hot Lists (Last 10 Games)")
 
-            # === KEY FILTER: Only include if ≥80% on AT LEAST ONE threshold ===
-            if (over_05_h >= 80 or over_15_h >= 80 or 
-                over_05_k >= 80 or over_15_k >= 80 or 
-                over_15_hrr >= 80):
+    with st.spinner("Crunching player stats..."):
+        df = fetch_and_compute_props()
 
-                label = f"{full_name} ({team_abbrev})"
+    if df.empty:
+        st.error("No qualifiers found for today.")
+        return
 
-                results.append({
-                    "player": label,
-                    "over_0.5_H": round(over_05_h, 1),
-                    "over_1.5_H": round(over_15_h, 1),
-                    "over_0.5_K": round(over_05_k, 1),
-                    "over_1.5_K": round(over_15_k, 1),
-                    "over_1.5_HRR": round(over_15_hrr, 1),
-                    "games_considered": n_games,
-                    "player_id": player_id
-                })
-
-    if not results:
-        print("❌ No batters met the ≥80% threshold on any prop today.")
-        data = {
-            "date": today_str,
-            "generated_at": datetime.datetime.now().isoformat(),
-            "total_qualifiers": 0,
-            "batters": []
-        }
+    # --- HITS SECTION ---
+    st.header("🔥 Hits (H)")
+    h_cols = ["player", "over_0.5_H", "over_1.5_H", "games_considered"]
+    df_h = df[(df["over_0.5_H"] >= 80) | (df["over_1.5_H"] >= 80)][h_cols].sort_values("over_1.5_H", ascending=False)
+    
+    if not df_h.empty:
+        st.bar_chart(df_h.set_index("player")[["over_0.5_H", "over_1.5_H"]])
+        st.dataframe(df_h, use_container_width=True, hide_index=True)
     else:
-        df_results = pd.DataFrame(results)
-        # Sort by strongest props (1.5 thresholds first)
-        df_results = df_results.sort_values(["over_1.5_H", "over_1.5_K", "over_1.5_HRR"], ascending=False)
+        st.info("No 80%+ qualifiers for Hits.")
 
-        print(f"\n=== TODAY'S PROP QUALIFIERS (>=80% on at least one threshold) ===")
-        print(f"Found {len(results)} qualifying batters")
-        print(df_results[["player", 
-                          "over_0.5_H", "over_1.5_H", 
-                          "over_0.5_K", "over_1.5_K", 
-                          "over_1.5_HRR", 
-                          "games_considered"]].to_string(index=False))
+    st.divider()
 
-        data = {
-            "date": today_str,
-            "generated_at": datetime.datetime.now().isoformat(),
-            "total_qualifiers": len(results),
-            "batters": df_results.to_dict("records")
-        }
+    # --- STRIKEOUTS SECTION ---
+    st.header("⚡ Strikeouts (K)")
+    k_cols = ["player", "over_0.5_K", "over_1.5_K", "games_considered"]
+    df_k = df[(df["over_0.5_K"] >= 80) | (df["over_1.5_K"] >= 80)][k_cols].sort_values("over_1.5_K", ascending=False)
 
-    # Save JSON
-    with open("daily_k_props.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+    if not df_k.empty:
+        st.bar_chart(df_k.set_index("player")[["over_0.5_K", "over_1.5_K"]])
+        st.dataframe(df_k, use_container_width=True, hide_index=True)
+    else:
+        st.info("No 80%+ qualifiers for Strikeouts.")
 
-    print(f"\n✅ Saved {len(results)} qualifying batters to daily_k_props.json")
+    st.divider()
 
+    # --- HRR SECTION ---
+    st.header("📊 Hits + Runs + RBI (HRR)")
+    hrr_cols = ["player", "over_1.5_HRR", "games_considered"]
+    df_hrr = df[df["over_1.5_HRR"] >= 80][hrr_cols].sort_values("over_1.5_HRR", ascending=False)
+
+    if not df_hrr.empty:
+        st.bar_chart(df_hrr.set_index("player")["over_1.5_HRR"])
+        st.dataframe(df_hrr, use_container_width=True, hide_index=True)
+    else:
+        st.info("No 80%+ qualifiers for HRR.")
 
 if __name__ == "__main__":
-    compute_daily_k_props()
+    main()
