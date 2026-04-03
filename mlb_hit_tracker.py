@@ -84,55 +84,73 @@ st.set_page_config(page_title="MLB Batter Stats", page_icon="⚾", layout="wide"
 
 st.title("⚾ MLB Active Batter Recent Game Stats")
 
-# ====================== DAILY PROP HOT LIST (COLLAPSIBLE) ======================
-with st.expander("🔥 Today's Prop Hot List (≥80% Hit Rate - Last 10 Games)", expanded=False):
-    daily_file = "daily_k_props.json"
+# ====================== DAILY PROP HOT LISTS (3 SEPARATE SECTIONS) ======================
+st.subheader("🔥 Today's Prop Hot Lists (≥80% Hit Rate - Last 10 Games)")
 
-    if os.path.exists(daily_file):
-        try:
-            with open(daily_file, "r", encoding="utf-8") as f:
-                daily_data = json.load(f)
-            
-            if daily_data.get("date") == datetime.date.today().strftime("%Y-%m-%d"):
-                daily_df = pd.DataFrame(daily_data.get("batters", []))
-                
-                if not daily_df.empty:
-                    display_df = daily_df[[
-                        "player",
-                        "over_0.5_H", "over_1.5_H",
-                        "over_0.5_K", "over_1.5_K",
-                        "over_1.5_HRR",
-                        "avg_H_last10", "avg_K_last10", "avg_HRR_last10",
-                        "games_considered"
-                    ]].copy()
+daily_file = "daily_k_props.json"
 
+if os.path.exists(daily_file):
+    try:
+        with open(daily_file, "r", encoding="utf-8") as f:
+            daily_data = json.load(f)
+        
+        if daily_data.get("date") == datetime.date.today().strftime("%Y-%m-%d"):
+            daily_df = pd.DataFrame(daily_data.get("batters", []))
+
+            if not daily_df.empty:
+                # ====================== HITS SECTION ======================
+                with st.expander("Hits Hot List", expanded=False):
+                    hits_df = daily_df[["player", "over_0.5_H", "over_1.5_H", "games_considered"]].copy()
                     st.dataframe(
-                        display_df,
+                        hits_df,
                         use_container_width=True,
                         hide_index=True,
                         column_config={
                             "player": st.column_config.TextColumn("Player"),
-                            "over_0.5_H": st.column_config.NumberColumn("% >0.5 H", format="%.1f%%"),
-                            "over_1.5_H": st.column_config.NumberColumn("% >1.5 H", format="%.1f%%"),
-                            "over_0.5_K": st.column_config.NumberColumn("% >0.5 K", format="%.1f%%"),
-                            "over_1.5_K": st.column_config.NumberColumn("% >1.5 K", format="%.1f%%"),
-                            "over_1.5_HRR": st.column_config.NumberColumn("% >1.5 H+R+RBI", format="%.1f%%"),
-                            "avg_H_last10": st.column_config.NumberColumn("Avg H", format="%.2f"),
-                            "avg_K_last10": st.column_config.NumberColumn("Avg K", format="%.2f"),
-                            "avg_HRR_last10": st.column_config.NumberColumn("Avg H+R+RBI", format="%.2f"),
+                            "over_0.5_H": st.column_config.NumberColumn("% >0.5 Hits", format="%.1f%%"),
+                            "over_1.5_H": st.column_config.NumberColumn("% >1.5 Hits", format="%.1f%%"),
                             "games_considered": st.column_config.NumberColumn("Games", format="%d"),
                         }
                     )
-                    
-                    st.caption(f"✅ Updated today • Only players with ≥80% hit rate on at least one prop • Last 10 games")
-                else:
-                    st.info("No batters reached 80% hit rate on any prop today.")
+
+                # ====================== STRIKEOUTS SECTION ======================
+                with st.expander("Strikeouts Hot List", expanded=False):
+                    k_df = daily_df[["player", "over_0.5_K", "over_1.5_K", "games_considered"]].copy()
+                    st.dataframe(
+                        k_df,
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            "player": st.column_config.TextColumn("Player"),
+                            "over_0.5_K": st.column_config.NumberColumn("% >0.5 K", format="%.1f%%"),
+                            "over_1.5_K": st.column_config.NumberColumn("% >1.5 K", format="%.1f%%"),
+                            "games_considered": st.column_config.NumberColumn("Games", format="%d"),
+                        }
+                    )
+
+                # ====================== H+R+RBI SECTION ======================
+                with st.expander("H + R + RBI Hot List", expanded=False):
+                    hrr_df = daily_df[["player", "over_1.5_HRR", "games_considered"]].copy()
+                    st.dataframe(
+                        hrr_df,
+                        use_container_width=True,
+                        hide_index=True,
+                        column_config={
+                            "player": st.column_config.TextColumn("Player"),
+                            "over_1.5_HRR": st.column_config.NumberColumn("% >1.5 H+R+RBI", format="%.1f%%"),
+                            "games_considered": st.column_config.NumberColumn("Games", format="%d"),
+                        }
+                    )
+
+                st.caption("✅ Updated today • Only players with ≥80% hit rate shown • Last 10 games")
             else:
-                st.warning("⚠️ Daily props are outdated. Please run `python compute_daily_k_props.py`")
-        except Exception as e:
-            st.error(f"Could not load daily props: {e}")
-    else:
-        st.info("👉 Run `python compute_daily_k_props.py` (or let GitHub Actions run it) to generate the daily hot list.")
+                st.info("No batters reached 80% hit rate on any prop today.")
+        else:
+            st.warning("⚠️ Daily props are outdated. Please run `python compute_daily_k_props.py`")
+    except Exception as e:
+        st.error(f"Could not load daily props: {e}")
+else:
+    st.info("👉 Run `python compute_daily_k_props.py` (or let GitHub Actions run it) to generate the daily hot lists.")
 
 st.divider()
 
@@ -372,4 +390,4 @@ else:
     st.info("👈 Select a game and player from the sidebar for detailed analysis.")
 
 st.divider()
-st.caption("Active batters only • Current season • Official MLB Stats API • Daily Hot List includes Hits, K, and H+R+RBI")
+st.caption("Active batters only • Current season • Official MLB Stats API")
