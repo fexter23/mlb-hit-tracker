@@ -3,8 +3,6 @@ import requests
 import pandas as pd
 import datetime
 import plotly.express as px
-import json
-import os
 
 # ====================== CACHED API FUNCTIONS ======================
 @st.cache_data(ttl=1800)
@@ -66,6 +64,7 @@ def get_player_info(player_id: int):
     except Exception:
         return None
 
+# Current season only
 @st.cache_data(ttl=3600)
 def get_game_log(player_id: int):
     current_year = datetime.datetime.now().year
@@ -78,21 +77,60 @@ def get_game_log(player_id: int):
     except Exception:
         return []
 
+@st.cache_data(ttl=3600)
+def get_game_suggestions(away_id, home_id):
+    """Analyzes all batters in a game to find the top 3 high-probability props."""
+    away_roster = get_team_active_roster(away_id)
+    home_roster = get_team_active_roster(home_id)
+    all_players = away_roster + home_roster
+    suggestions = []
+    
+    # Standard prop configs to check for the 'Hot List'
+    eval_configs = [
+        ("Hits", "hits", 0.5), 
+        ("RBI", "rbi", 0.5), 
+        ("H+R+RBI", "combined", 1.5), 
+        ("Strikeouts", "strikeOuts", 0.5)
+    ]
+    
+    for p in all_players:
+        logs = get_game_log(p['id'])
+        if not logs or len(logs) < 5: continue
+        
+        recent = logs[:10]
+        count = len(recent)
+        
+        for label, key, thresh in eval_configs:
+            hits = 0
+            for split in recent:
+                stat = split.get("stat", {})
+                if key == "combined":
+                    val = int(stat.get("hits", 0)) + int(stat.get("runs", 0)) + int(stat.get("rbi", 0))
+                else:
+                    val = int(stat.get(key, 0))
+                
+                if val > thresh:
+                    hits += 1
+            
+            rate = (hits / count) * 100
+            if rate >= 70: # Only include props with high consistency
+                suggestions.append({
+                    "name": p['fullName'],
+                    "prop": f"{label} > {thresh}",
+                    "rate": rate,
+                    "games": count
+                })
+                
+    return sorted(suggestions, key=lambda x: x['rate'], reverse=True)[:3]
 
 # ====================== STREAMLIT APP ======================
 st.set_page_config(page_title="MLB Batter Stats", page_icon="⚾", layout="wide")
 
 st.title("⚾ MLB Active Batter Recent Game Stats")
 
-# ====================== DAILY PROP HOT LISTS (SIDE-BY-SIDE) ======================
-st.subheader("🔥 Today's Prop Hot Lists (≥80% Hit Rate - Last 10 Games)")
-
-daily_file = "daily_k_props.json"
-selected_game = None
-
-# Sidebar - Game Selection
+# ====================== SIDEBAR FILTERS ======================
 with st.sidebar:
-    st.header("🎮 Game & Player Selection")
+    st.header("🎮 Filters")
     
     today_games = get_todays_games()
     if not today_games:
@@ -100,96 +138,11 @@ with st.sidebar:
         st.stop()
     
     game_options = [g["display"] for g in today_games]
-    selected_display = st.selectbox("Select a game", options=game_options, key="game_select")
+    selected_display = st.selectbox("Select a game", options=game_options)
     
     selected_game = next((g for g in today_games if g["display"] == selected_display), None)
-
-# Load and filter daily hot list by selected game
-if os.path.exists(daily_file) and selected_game:
-    try:
-        with open(daily_file, "r", encoding="utf-8") as f:
-            daily_data = json.load(f)
-        
-        if daily_data.get("date") == datetime.date.today().strftime("%Y-%m-%d"):
-            daily_df = pd.DataFrame(daily_data.get("batters", []))
-
-            if not daily_df.empty and selected_game:
-                # Filter to only players from the selected game's two teams
-                away_abbrev = selected_game["awayAbbrev"]
-                home_abbrev = selected_game["homeAbbrev"]
-                daily_df = daily_df[daily_df["player"].str.contains(f"\\({away_abbrev}\\)|\\({home_abbrev}\\)", regex=True)].copy()
-
-                if not daily_df.empty:
-                    col_hits, col_k, col_hrr = st.columns(3)
-
-                    # ====================== HITS ======================
-                    with col_hits:
-                        with st.expander("Hits Hot List", expanded=False):
-                            hits_df = daily_df[["player", "over_0.5_H", "over_1.5_H"]].copy()
-                            hits_df = hits_df.assign(
-                                avg_hit_rate = ((hits_df["over_0.5_H"] + hits_df["over_1.5_H"]) / 2).round(1)
-                            )
-                            st.dataframe(
-                                hits_df,
-                                use_container_width=True,
-                                hide_index=True,
-                                column_config={
-                                    "player": st.column_config.TextColumn("Player"),
-                                    "over_0.5_H": st.column_config.NumberColumn(">0.5", format="%.1f%%"),
-                                    "over_1.5_H": st.column_config.NumberColumn(">1.5", format="%.1f%%"),
-                                    "avg_hit_rate": st.column_config.NumberColumn("Avg", format="%.1f%%"),
-                                }
-                            )
-
-                    # ====================== STRIKEOUTS ======================
-                    with col_k:
-                        with st.expander("Strikeouts Hot List", expanded=False):
-                            k_df = daily_df[["player", "over_0.5_K", "over_1.5_K"]].copy()
-                            k_df = k_df.assign(
-                                avg_hit_rate = ((k_df["over_0.5_K"] + k_df["over_1.5_K"]) / 2).round(1)
-                            )
-                            st.dataframe(
-                                k_df,
-                                use_container_width=True,
-                                hide_index=True,
-                                column_config={
-                                    "player": st.column_config.TextColumn("Player"),
-                                    "over_0.5_K": st.column_config.NumberColumn(">0.5", format="%.1f%%"),
-                                    "over_1.5_K": st.column_config.NumberColumn(">1.5", format="%.1f%%"),
-                                    "avg_hit_rate": st.column_config.NumberColumn("Avg", format="%.1f%%"),
-                                }
-                            )
-
-                    # ====================== H+R+RBI ======================
-                    with col_hrr:
-                        with st.expander("H + R + RBI Hot List", expanded=False):
-                            hrr_df = daily_df[["player", "over_1.5_HRR"]].copy()
-                            st.dataframe(
-                                hrr_df,
-                                use_container_width=True,
-                                hide_index=True,
-                                column_config={
-                                    "player": st.column_config.TextColumn("Player"),
-                                    "over_1.5_HRR": st.column_config.NumberColumn(">1.5", format="%.1f%%"),
-                                }
-                            )
-
-                    st.caption(f"✅ Showing **{selected_game['awayAbbrev']} @ {selected_game['homeAbbrev']}** only • Updated today")
-                else:
-                    st.info(f"No qualifying players (≥80%) from **{selected_game['awayAbbrev']} @ {selected_game['homeAbbrev']}** today.")
-            else:
-                st.info("No qualifying batters today.")
-        else:
-            st.warning("⚠️ Daily props are outdated. Please run `python compute_daily_k_props.py`")
-    except Exception as e:
-        st.error(f"Could not load daily props: {e}")
-else:
-    st.info("👉 Select a game from the sidebar to see matchup-specific hot lists.")
-
-st.divider()
-
-# ====================== SIDEBAR - PLAYER SELECTION ======================
-with st.sidebar:
+    
+    # Build batter list
     batter_list = []
     if selected_game:
         with st.spinner("Loading active batters..."):
@@ -205,7 +158,8 @@ with st.sidebar:
                 batter_list.append({"label": label, "id": b["id"], "name": b["fullName"]})
         
         batter_list = sorted(batter_list, key=lambda x: x["name"])
-
+    
+    # Player, Stat, Threshold on same row - compact
     if batter_list:
         player_options = [b["label"] for b in batter_list]
         
@@ -223,9 +177,15 @@ with st.sidebar:
         
         with col2:
             stat_options = ["Hits", "Runs", "RBI", "H+R+RBI", "Strikeouts"]
-            selected_stat = st.selectbox("Stat", options=stat_options, index=0, label_visibility="collapsed")
+            selected_stat = st.selectbox(
+                "Stat", 
+                options=stat_options, 
+                index=0,
+                label_visibility="collapsed"
+            )
         
         with col3:
+            # Dynamic thresholds based on selected stat
             if selected_stat == "Strikeouts":
                 threshold_options = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
                 default_threshold = 2.5
@@ -246,7 +206,31 @@ with st.sidebar:
         threshold = None
 
 
-# ====================== MAIN PLAYER ANALYSIS ======================
+# ====================== MAIN AREA ======================
+# --- NEW: Suggested Bet Section ---
+if selected_game:
+    st.subheader(f"🔥 Suggested 3-Prop Bet: {selected_game['display']}")
+    with st.spinner("Analyzing matchup trends..."):
+        best_props = get_game_suggestions(selected_game["awayId"], selected_game["homeId"])
+        
+        if len(best_props) >= 3:
+            cols = st.columns(3)
+            for i, p in enumerate(best_props):
+                with cols[i]:
+                    st.markdown(
+                        f"<div style='border:1px solid #444; padding:15px; border-radius:10px; text-align:center; background-color:#1e1e1e;'>"
+                        f"<div style='color:#00ff88; font-size:1.5em; font-weight:bold;'>{p['rate']:.0f}% Hit Rate</div>"
+                        f"<div style='font-size:1.1em; margin:5px 0;'>{p['name']}</div>"
+                        f"<div style='color:#aaa;'>{p['prop']}</div>"
+                        f"<div style='font-size:0.8em; color:#666;'>Last {p['games']} games</div>"
+                        f"</div>",
+                        unsafe_allow_html=True
+                    )
+        else:
+            st.info("Not enough high-probability props found for this game yet.")
+    st.divider()
+
+# --- Existing Player Logic ---
 if player_id:
     player_info = get_player_info(player_id)
 
@@ -287,7 +271,7 @@ if player_id:
             df = pd.DataFrame(records)
             df = df.sort_values("Date", ascending=False)
 
-            # Prop Hit Rate
+            # ====================== PROP HIT RATE (OVER + UNDER) ======================
             if selected_stat and threshold is not None:
                 n_games = min(10, len(df))
                 pdata = df.head(n_games).copy()
@@ -306,17 +290,36 @@ if player_id:
                 over_pct = (over_count / n_games) * 100 if n_games > 0 else 0
                 under_pct = (under_count / n_games) * 100 if n_games > 0 else 0
 
+                # Colors
                 over_color = '#00ff88' if over_pct > 73 else '#ffcc00' if over_pct >= 60 else '#ff5555'
                 under_color = '#00ff88' if under_pct > 73 else '#ffcc00' if under_pct >= 60 else '#ff5555'
 
                 st.subheader(f"🎯 {selected_stat} > {threshold:.1f} — Last {n_games} Games")
 
+                # Hit Rate Display
                 col_o, col_u = st.columns(2)
+                
                 with col_o:
-                    st.markdown(f"<div style='text-align:center;'><div style='font-size:2.8em; font-weight:bold; color:{over_color};'>{over_pct:.0f}%</div><div style='color:#aaa; font-size:0.9em;'>OVER</div></div>", unsafe_allow_html=True)
+                    st.markdown(
+                        f"<div style='text-align:center;'>"
+                        f"<div style='font-size:2.8em; font-weight:bold; color:{over_color};'>"
+                        f"{over_pct:.0f}%</div>"
+                        f"<div style='color:#aaa; font-size:0.9em;'>OVER</div>"
+                        f"</div>",
+                        unsafe_allow_html=True
+                    )
+                
                 with col_u:
-                    st.markdown(f"<div style='text-align:center;'><div style='font-size:2.8em; font-weight:bold; color:{under_color};'>{under_pct:.0f}%</div><div style='color:#aaa; font-size:0.9em;'>UNDER</div></div>", unsafe_allow_html=True)
+                    st.markdown(
+                        f"<div style='text-align:center;'>"
+                        f"<div style='font-size:2.8em; font-weight:bold; color:{under_color};'>"
+                        f"{under_pct:.0f}%</div>"
+                        f"<div style='color:#aaa; font-size:0.9em;'>UNDER</div>"
+                        f"</div>",
+                        unsafe_allow_html=True
+                    )
 
+                # Streak
                 results = (pdata[stat_col] > threshold).tolist()
                 if results:
                     streak_type = "O" if results[0] else "U"
@@ -328,23 +331,48 @@ if player_id:
                             break
                     st.markdown(f"**Current streak:** {streak_type}{streak_count}")
 
-                fig_prop = px.bar(pdata, x="Date", y=stat_col, title=f"{selected_stat} — Last {n_games} Games", text_auto=True)
+                # Bar chart with threshold
+                fig_prop = px.bar(
+                    pdata,
+                    x="Date",
+                    y=stat_col,
+                    title=f"{selected_stat} — Last {n_games} Games",
+                    text_auto=True
+                )
                 fig_prop.update_traces(textposition='inside')
-                fig_prop.add_hline(y=threshold, line_dash="dash", line_color="#00ffff",
-                                   annotation_text=f"Threshold = {threshold:.1f}", annotation_position="top right")
-                fig_prop.update_layout(height=380, margin=dict(t=60, b=30), yaxis_title=None, xaxis_title=None)
+                fig_prop.add_hline(
+                    y=threshold,
+                    line_dash="dash",
+                    line_color="#00ffff",
+                    annotation_text=f"Threshold = {threshold:.1f}",
+                    annotation_position="top right"
+                )
+                fig_prop.update_layout(
+                    height=380,
+                    margin=dict(t=60, b=30),
+                    yaxis_title=None,
+                    xaxis_title=None
+                )
                 fig_prop.update_xaxes(type='category')
                 st.plotly_chart(fig_prop, use_container_width=True)
 
-            # Game Log Table
+            # ====================== GAME LOG TABLE ======================
             st.subheader(f"Recent Games — Hitting Stats ({len(df)} games this season)")
 
             totals_row = pd.DataFrame([{
-                "Date": "TOTAL", "Opponent": "", "Home/Away": "",
-                "AB": int(df["AB"].sum()), "R": df["R"].sum(), "H": df["H"].sum(),
-                "HR": int(df["HR"].sum()), "RBI": df["RBI"].sum(),
-                "K": int(df["K"].sum()), "H+R+RBI": df["H+R+RBI"].sum(),
-                "AVG": "", "OBP": "", "SLG": "",
+                "Date": "TOTAL",
+                "Opponent": "",
+                "Home/Away": "",
+                "AB": int(df["AB"].sum()),
+                "R": df["R"].sum(),
+                "H": df["H"].sum(),
+                "HR": int(df["HR"].sum()),
+                "RBI": df["RBI"].sum(),
+                "K": int(df["K"].sum()),
+                "H+R+RBI": df["H+R+RBI"].sum(),
+                "AVG": "",
+                "OBP": "",
+                "SLG": "",
             }])
 
             df_display = pd.concat([df.head(20), totals_row], ignore_index=True)
@@ -368,8 +396,8 @@ if player_id:
             )
     else:
         st.error("This player is a pitcher or invalid. Please select a batter.")
-else:
-    st.info("👈 Select a game and player from the sidebar for detailed analysis.")
+elif not selected_game:
+    st.info("👈 Select a game and player from the sidebar to get started.")
 
 st.divider()
-st.caption("Active batters only • Current season • Official MLB Stats API • Hot lists filtered by selected game")
+st.caption("Active batters only • Current season • Official MLB Stats API • Strikeouts added")
