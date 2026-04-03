@@ -396,17 +396,23 @@ with tab_parlays:
             if f"{g['awayAbbrev']} @ {g['homeAbbrev']}" == selected_parlay_game_label
         ]
 
-    for game in games_to_show:
+    # Fetch all parlays first so we can sort by avg hit rate
+    with st.spinner("Loading parlay data for all games..."):
+        parlay_data = []
+        for game in games_to_show:
+            avg_rate, legs = build_game_parlay(
+                game["gamePk"],
+                game["awayId"], game["homeId"],
+                game["awayAbbrev"], game["homeAbbrev"]
+            )
+            parlay_data.append((game, avg_rate, legs))
+
+    parlay_data.sort(key=lambda x: x[1] if x[1] is not None else 0, reverse=True)
+
+    for game, avg_rate, legs in parlay_data:
         game_label = f"{game['awayTeam']} @ {game['homeTeam']}"
 
         with st.expander(f"⚾ {game_label}", expanded=(len(games_to_show) == 1)):
-            with st.spinner(f"Loading parlay for {game['awayAbbrev']} @ {game['homeAbbrev']}..."):
-                avg_rate, legs = build_game_parlay(
-                    game["gamePk"],
-                    game["awayId"], game["homeId"],
-                    game["awayAbbrev"], game["homeAbbrev"]
-                )
-
             if not legs:
                 st.warning("Not enough data to suggest a parlay for this game.")
                 continue
