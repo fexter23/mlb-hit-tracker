@@ -1,14 +1,10 @@
-# ====================== compute_daily_k_props.py ======================
-# Save this as a new file in the same folder as mlb.py
-# Run manually: python compute_daily_k_props.py
-# It runs every morning (schedule it with cron, Task Scheduler, or GitHub Actions)
-
 import requests
 import pandas as pd
 import datetime
 import json
+import os
 
-# ====================== API FUNCTIONS (copied from mlb.py) ======================
+# ====================== API FUNCTIONS ======================
 def get_todays_games():
     today = datetime.date.today().strftime("%Y-%m-%d")
     url = f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={today}&hydrate=team"
@@ -29,10 +25,10 @@ def get_todays_games():
                     "homeTeam": home.get("name"),
                     "homeAbbrev": home.get("abbreviation"),
                     "homeId": home.get("id"),
-                    "display": f"{away.get('abbreviation', '???')} @ {home.get('abbreviation', '???')} ({game.get('status', {}).get('detailedState', 'Scheduled')})"
                 })
         return games
-    except Exception:
+    except Exception as e:
+        print(f"Error fetching games: {e}")
         return []
 
 def get_team_active_roster(team_id: int):
@@ -70,7 +66,7 @@ def get_game_log(player_id: int):
 # ====================== MAIN COMPUTE FUNCTION ======================
 def compute_daily_k_props():
     today_str = datetime.date.today().strftime("%Y-%m-%d")
-    print(f"🚀 Computing strikeout prop hit rates for {today_str} games...")
+    print(f"🚀 Computing strikeout prop hit rates for {today_str}...")
 
     today_games = get_todays_games()
     if not today_games:
@@ -90,65 +86,72 @@ def compute_daily_k_props():
 
         for player_id, full_name, team_abbrev in batter_list:
             game_splits = get_game_log(player_id)
-            if not game_splits:
+            if len(game_splits) < 5:   # Need at least 5 games for meaningful %
                 continue
 
             records = []
             for split in game_splits:
                 stat = split.get("stat", {})
                 k = int(stat.get("strikeOuts", 0))
-                date_str = split.get("date", "N/A")
-                records.append({"Date": date_str, "K": k})
+                records.append({"K": k})
 
             if not records:
                 continue
 
             df = pd.DataFrame(records)
-            df = df.sort_values("Date", ascending=False)
-            pdata = df.head(10).copy()
+            pdata = df.head(10).copy()   # Last 10 games
             n_games = len(pdata)
 
-            if n_games == 0:
+            if n_games < 5:
                 continue
 
             over_05_pct = (pdata["K"] > 0.5).sum() / n_games * 100
             over_15_pct = (pdata["K"] > 1.5).sum() / n_games * 100
             avg_k = pdata["K"].mean()
 
-            label = f"{full_name} ({team_abbrev})"
+            # NEW FILTER: Only keep players with ≥ 80% on at least one threshold
+            if over_05_pct >= 80 or over_15_pct >= 80:
+                label = f"{full_name} ({team_abbrev})"
 
-            results.append({
-                "player": label,
-                "over_0.5_K": round(over_05_pct, 1),
-                "over_1.5_K": round(over_15_pct, 1),
-                "avg_K_last10": round(avg_k, 2),
-                "games_considered": n_games,
-                "player_id": player_id
-            })
+                results.append({
+                    "player": label,
+                    "over_0.5_K": round(over_05_pct, 1),
+                    "over_1.5_K": round(over_15_pct, 1),
+                    "avg_K_last10": round(avg_k, 2),
+                    "games_considered": n_games,
+                    "player_id": player_id
+                })
 
     if not results:
-        print("❌ No batter data found.")
+        print("❌ No batters met the ≥80% hit rate threshold today.")
+        # Still create empty file so app doesn't break
+        data = {"date": today_str, "generated_at": datetime.datetime.now().isoformat(), "batters": []}
+        with open("daily_k_props.json", "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2)
+        print("✅ Created empty daily_k_props.json (no qualifiers today)")
         return
 
     df_results = pd.DataFrame(results)
+    # Sort by strongest prop first (1.5 K is usually the more valuable one)
     df_results = df_results.sort_values("over_1.5_K", ascending=False)
 
-    print("\n=== TODAY'S STRIKEOUT PROP HIT RATES (Last 10 Games) ===")
+    print(f"\n=== TODAY'S STRIKEOUT PROP QUALIFIERS (≥80% hit rate) ===")
+    print(f"Found {len(results)} batters")
     print(df_results[["player", "over_0.5_K", "over_1.5_K", "avg_K_last10", "games_considered"]].to_string(index=False))
 
-    # Save to JSON for the Streamlit app
+    # Save to JSON
     data = {
         "date": today_str,
         "generated_at": datetime.datetime.now().isoformat(),
-        "total_batters_processed": len(results),
+        "total_qualifiers": len(results),
         "batters": df_results.to_dict("records")
     }
 
     with open("daily_k_props.json", "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-    print(f"\n✅ Saved {len(results)} batters to daily_k_props.json")
-    print("   → Your mlb.py app will now display this table automatically!")
+    print(f"\n✅ Saved {len(results)} qualifying batters to daily_k_props.json")
+    print("File ready for Streamlit app!")
 
 
 if __name__ == "__main__":
