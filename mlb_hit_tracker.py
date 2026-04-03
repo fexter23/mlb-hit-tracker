@@ -84,7 +84,7 @@ st.set_page_config(page_title="MLB Batter Stats", page_icon="⚾", layout="wide"
 
 st.title("⚾ MLB Active Batter Recent Game Stats")
 
-# ====================== DAILY PROP HOT LISTS (3 SEPARATE SECTIONS) ======================
+# ====================== DAILY PROP HOT LISTS ======================
 st.subheader("🔥 Today's Prop Hot Lists (≥80% Hit Rate - Last 10 Games)")
 
 daily_file = "daily_k_props.json"
@@ -101,14 +101,19 @@ if os.path.exists(daily_file):
                 # ====================== HITS SECTION ======================
                 with st.expander("Hits Hot List", expanded=False):
                     hits_df = daily_df[["player", "over_0.5_H", "over_1.5_H", "games_considered"]].copy()
+                    # Calculate average hit rate for 0.5 and 1.5 thresholds
+                    hits_df = hits_df.assign(
+                        avg_hit_rate_05_15 = ((hits_df["over_0.5_H"] + hits_df["over_1.5_H"]) / 2).round(1)
+                    )
                     st.dataframe(
                         hits_df,
                         use_container_width=True,
                         hide_index=True,
                         column_config={
                             "player": st.column_config.TextColumn("Player"),
-                            "over_0.5_H": st.column_config.NumberColumn("% >0.5 Hits", format="%.1f%%"),
-                            "over_1.5_H": st.column_config.NumberColumn("% >1.5 Hits", format="%.1f%%"),
+                            "over_0.5_H": st.column_config.NumberColumn("% >0.5 H", format="%.1f%%"),
+                            "over_1.5_H": st.column_config.NumberColumn("% >1.5 H", format="%.1f%%"),
+                            "avg_hit_rate_05_15": st.column_config.NumberColumn("Avg Hit Rate (0.5 & 1.5)", format="%.1f%%"),
                             "games_considered": st.column_config.NumberColumn("Games", format="%d"),
                         }
                     )
@@ -116,6 +121,10 @@ if os.path.exists(daily_file):
                 # ====================== STRIKEOUTS SECTION ======================
                 with st.expander("Strikeouts Hot List", expanded=False):
                     k_df = daily_df[["player", "over_0.5_K", "over_1.5_K", "games_considered"]].copy()
+                    # Calculate average hit rate for 0.5 and 1.5 thresholds
+                    k_df = k_df.assign(
+                        avg_hit_rate_05_15 = ((k_df["over_0.5_K"] + k_df["over_1.5_K"]) / 2).round(1)
+                    )
                     st.dataframe(
                         k_df,
                         use_container_width=True,
@@ -124,6 +133,7 @@ if os.path.exists(daily_file):
                             "player": st.column_config.TextColumn("Player"),
                             "over_0.5_K": st.column_config.NumberColumn("% >0.5 K", format="%.1f%%"),
                             "over_1.5_K": st.column_config.NumberColumn("% >1.5 K", format="%.1f%%"),
+                            "avg_hit_rate_05_15": st.column_config.NumberColumn("Avg Hit Rate (0.5 & 1.5)", format="%.1f%%"),
                             "games_considered": st.column_config.NumberColumn("Games", format="%d"),
                         }
                     )
@@ -142,7 +152,7 @@ if os.path.exists(daily_file):
                         }
                     )
 
-                st.caption("✅ Updated today • Only players with ≥80% hit rate shown • Last 10 games")
+                st.caption("✅ Updated today • Only players with ≥80% on at least one prop • Last 10 games")
             else:
                 st.info("No batters reached 80% hit rate on any prop today.")
         else:
