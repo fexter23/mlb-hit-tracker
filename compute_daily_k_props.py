@@ -2,6 +2,16 @@ import requests
 import pandas as pd
 import datetime
 import json
+import smtplib
+import os
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
+# ====================== CONFIG ======================
+RECIPIENT_EMAIL = "your@email.com"       # <-- hardcode recipient here
+SENDER_EMAIL    = os.environ["GMAIL_USER"]        # set in GitHub Actions secrets
+SENDER_PASSWORD = os.environ["GMAIL_APP_PASSWORD"] # set in GitHub Actions secrets
+
 
 # ====================== API FUNCTIONS ======================
 def get_todays_games():
@@ -62,90 +72,111 @@ def get_game_log(player_id: int):
         return []
 
 
-# ====================== PARLAY SUGGESTION FUNCTION ======================
-def suggest_game_parlays(game_batter_stats: list, game_label: str) -> dict:
-    """
-    Given a list of batter stat dicts for one game, pick the 3 best prop legs
-    based on highest hit rate. Each candidate is a (player, prop_label, hit_rate) tuple.
-
-    Priority order for prop selection:
-      1. Avoid duplicate players across the 3 legs (prefer variety)
-      2. Rank by hit rate descending
-      3. Prefer higher-threshold props (1.5) when hit rate is the same
-    """
-    PROP_COLUMNS = [
-        ("over_1.5_H",   "Over 1.5 Hits"),
-        ("over_0.5_H",   "Over 0.5 Hits"),
-        ("over_1.5_K",   "Over 1.5 Strikeouts"),
-        ("over_0.5_K",   "Over 0.5 Strikeouts"),
-        ("over_1.5_HRR", "Over 1.5 H+R+RBI"),
+# ====================== PARLAY BUILDER ======================
+def get_best_prop(row):
+    """Return the single strongest prop label + pct for a qualifier row."""
+    options = [
+        ("Over 0.5 Hits",        row["over_0.5_H"]),
+        ("Over 1.5 Hits",        row["over_1.5_H"]),
+        ("Over 0.5 Strikeouts",  row["over_0.5_K"]),
+        ("Over 1.5 Strikeouts",  row["over_1.5_K"]),
+        ("Over 1.5 H+R+RBI",     row["over_1.5_HRR"]),
     ]
+    return max(options, key=lambda x: x[1])
 
-    # Build a flat list of all (player, prop_key, prop_label, hit_rate) candidates
-    candidates = []
-    for batter in game_batter_stats:
-        for prop_key, prop_label in PROP_COLUMNS:
-            rate = batter.get(prop_key, 0)
-            if rate > 0:
-                candidates.append({
-                    "player":     batter["player"],
-                    "player_id":  batter["player_id"],
-                    "prop_key":   prop_key,
-                    "prop_label": prop_label,
-                    "hit_rate":   rate,
-                    "games_considered": batter["games_considered"],
-                })
+def build_parlays(df, n_parlays=3):
+    """
+    Greedily pick up to n_parlays non-overlapping 3-leg parlays.
+    Each player appears in at most one parlay.
+    """
+    players = df.to_dict("records")
+    parlays = []
+    used = set()
 
-    # Sort: highest hit rate first; for ties, prefer 1.5-threshold props (they appear earlier in PROP_COLUMNS)
-    candidates.sort(key=lambda c: (-c["hit_rate"], PROP_COLUMNS.index((c["prop_key"], c["prop_label"]))))
-
-    # Greedily pick 3 legs, preferring unique players
-    selected = []
-    used_players = set()
-
-    # Pass 1: unique players only
-    for c in candidates:
-        if len(selected) == 3:
-            break
-        if c["player"] not in used_players:
-            selected.append(c)
-            used_players.add(c["player"])
-
-    # Pass 2: if we still need legs, allow repeat players (edge case with thin rosters)
-    if len(selected) < 3:
-        for c in candidates:
-            if len(selected) == 3:
+    for i in range(len(players)):
+        if i in used:
+            continue
+        legs = [players[i]]
+        used.add(i)
+        for j in range(len(players)):
+            if j in used:
+                continue
+            legs.append(players[j])
+            used.add(j)
+            if len(legs) == 3:
                 break
-            if c not in selected:
-                selected.append(c)
+        if len(legs) == 3:
+            parlays.append(legs)
+        if len(parlays) == n_parlays:
+            break
 
-    if not selected:
-        return {
-            "game": game_label,
-            "note": "Insufficient data to suggest a parlay for this game.",
-            "legs": []
-        }
-
-    combined_confidence = round(
-        sum(leg["hit_rate"] for leg in selected) / len(selected), 1
-    )
-
-    return {
-        "game": game_label,
-        "avg_leg_hit_rate": combined_confidence,
-        "legs": [
-            {
-                "player":    leg["player"],
-                "prop":      leg["prop_label"],
-                "hit_rate":  leg["hit_rate"],
-                "games_considered": leg["games_considered"],
-            }
-            for leg in selected
-        ]
-    }
+    return parlays
 
 
-# ====================== MAIN COMPUTE FUNCTION ======================
+# ====================== EMAIL ======================
+def build_html_email(parlays, today_str):
+    if not parlays:
+        return f"""
+        <html><body style="font-family:sans-serif;color:#222;max-width:600px;margin:auto;padding:24px;">
+          <h2>MLB Prop Parlays — {today_str}</h2>
+          <p>No qualifying prop bets found for today. Check back tomorrow!</p>
+        </body></html>
+        """
+
+    parlay_html = ""
+    for idx, legs in enumerate(parlays, 1):
+        legs_html = ""
+        for li, leg in enumerate(legs, 1):
+            prop_label, prop_pct = get_best_prop(leg)
+            legs_html += f"""
+            <tr>
+              <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">
+                <span style="font-size:11px;background:#e8f4fd;color:#1a6fa8;
+                             padding:2px 8px;border-radius:999px;">Leg {li}</span>
+              </td>
+              <td style="padding:8px 12px;border-bottom:1px solid #f0f0f0;">
+                <strong>{leg['player']}</strong><br>
+                <span style="font-size:12px;color:#666;">{prop_label} &mdash; {prop_pct:.0f}% in last {leg['games_considered']} games</span>
+              </td>
+            </tr>
+            """
+        parlay_html += f"""
+        <div style="margin-bottom:20px;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden;">
+          <div style="background:#f8f8f8;padding:10px 16px;font-size:13px;
+                      font-weight:600;color:#555;letter-spacing:.04em;">
+            PARLAY {idx}
+          </div>
+          <table style="width:100%;border-collapse:collapse;">
+            {legs_html}
+          </table>
+        </div>
+        """
+
+    return f"""
+    <html><body style="font-family:sans-serif;color:#222;max-width:600px;margin:auto;padding:24px;">
+      <h2 style="margin-bottom:4px;">Today's 3-Leg Parlay Suggestions</h2>
+      <p style="color:#888;font-size:13px;margin-bottom:24px;">{today_str} &mdash; based on last 10 games, &ge;80% threshold</p>
+      {parlay_html}
+      <p style="font-size:11px;color:#aaa;margin-top:24px;">
+        Past performance does not guarantee future results. Bet responsibly.
+      </p>
+    </body></html>
+    """
+
+def send_email(subject, html_body):
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"]    = SENDER_EMAIL
+    msg["To"]      = RECIPIENT_EMAIL
+    msg.attach(MIMEText(html_body, "html"))
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        server.sendmail(SENDER_EMAIL, RECIPIENT_EMAIL, msg.as_string())
+    print(f"✅ Email sent to {RECIPIENT_EMAIL}")
+
+
+# ====================== MAIN ======================
 def compute_daily_k_props():
     today_str = datetime.date.today().strftime("%Y-%m-%d")
     print(f"🚀 Computing daily prop hot lists for {today_str}...")
@@ -156,9 +187,6 @@ def compute_daily_k_props():
         return
 
     results = []
-    # Map gamePk -> list of qualifying batter stat dicts (for parlay builder)
-    game_batter_map: dict[int, dict] = {}
-
     for game in today_games:
         away_batters = get_team_active_roster(game["awayId"])
         home_batters = get_team_active_roster(game["homeId"])
@@ -169,119 +197,81 @@ def compute_daily_k_props():
         for b in home_batters:
             batter_list.append((b["id"], b["fullName"], game["homeAbbrev"]))
 
-        game_key = game["gamePk"]
-        game_label = f"{game['awayTeam']} @ {game['homeTeam']}"
-        game_batter_map[game_key] = {"label": game_label, "batters": []}
-
         for player_id, full_name, team_abbrev in batter_list:
             game_splits = get_game_log(player_id)
-            if len(game_splits) < 5:   # Require at least 5 games
+            if len(game_splits) < 5:
                 continue
 
             records = []
             for split in game_splits:
                 stat = split.get("stat", {})
-                hits = int(stat.get("hits", 0))
-                runs = int(stat.get("runs", 0))
-                rbi = int(stat.get("rbi", 0))
-                strikeouts = int(stat.get("strikeOuts", 0))
-                combined = hits + runs + rbi
-
-                records.append({
-                    "H": hits,
-                    "K": strikeouts,
-                    "HRR": combined
-                })
+                hits        = int(stat.get("hits", 0))
+                runs        = int(stat.get("runs", 0))
+                rbi         = int(stat.get("rbi", 0))
+                strikeouts  = int(stat.get("strikeOuts", 0))
+                combined    = hits + runs + rbi
+                records.append({"H": hits, "K": strikeouts, "HRR": combined})
 
             if not records:
                 continue
 
-            df = pd.DataFrame(records)
-            pdata = df.head(10).copy()   # Last 10 games
+            df   = pd.DataFrame(records)
+            pdata = df.head(10).copy()
             n_games = len(pdata)
-
             if n_games < 5:
                 continue
 
-            # Calculate percentages
-            over_05_h = (pdata["H"] > 0.5).sum() / n_games * 100
-            over_15_h = (pdata["H"] > 1.5).sum() / n_games * 100
-            over_05_k = (pdata["K"] > 0.5).sum() / n_games * 100
-            over_15_k = (pdata["K"] > 1.5).sum() / n_games * 100
+            over_05_h   = (pdata["H"]   > 0.5).sum() / n_games * 100
+            over_15_h   = (pdata["H"]   > 1.5).sum() / n_games * 100
+            over_05_k   = (pdata["K"]   > 0.5).sum() / n_games * 100
+            over_15_k   = (pdata["K"]   > 1.5).sum() / n_games * 100
             over_15_hrr = (pdata["HRR"] > 1.5).sum() / n_games * 100
 
-            batter_stats = {
-                "player": f"{full_name} ({team_abbrev})",
-                "over_0.5_H": round(over_05_h, 1),
-                "over_1.5_H": round(over_15_h, 1),
-                "over_0.5_K": round(over_05_k, 1),
-                "over_1.5_K": round(over_15_k, 1),
-                "over_1.5_HRR": round(over_15_hrr, 1),
-                "games_considered": n_games,
-                "player_id": player_id
-            }
-
-            # Always store for parlay builder (all batters with enough games)
-            game_batter_map[game_key]["batters"].append(batter_stats)
-
-            # === KEY FILTER: Only include in main results if ≥80% on AT LEAST ONE threshold ===
             if (over_05_h >= 80 or over_15_h >= 80 or
                 over_05_k >= 80 or over_15_k >= 80 or
                 over_15_hrr >= 80):
-                results.append(batter_stats)
 
-    # ====================== PARLAY SUGGESTIONS ======================
-    parlay_suggestions = []
-    print(f"\n=== TODAY'S 3-LEG PARLAY SUGGESTIONS (per game) ===")
-    for game_key, gdata in game_batter_map.items():
-        if not gdata["batters"]:
-            continue
-        suggestion = suggest_game_parlays(gdata["batters"], gdata["label"])
-        parlay_suggestions.append(suggestion)
+                results.append({
+                    "player":           f"{full_name} ({team_abbrev})",
+                    "over_0.5_H":       round(over_05_h,   1),
+                    "over_1.5_H":       round(over_15_h,   1),
+                    "over_0.5_K":       round(over_05_k,   1),
+                    "over_1.5_K":       round(over_15_k,   1),
+                    "over_1.5_HRR":     round(over_15_hrr, 1),
+                    "games_considered": n_games,
+                    "player_id":        player_id,
+                })
 
-        print(f"\n🎯 {suggestion['game']}")
-        if not suggestion["legs"]:
-            print(f"   ⚠️  {suggestion.get('note', 'No legs available.')}")
-        else:
-            print(f"   Avg leg hit rate: {suggestion['avg_leg_hit_rate']}%")
-            for i, leg in enumerate(suggestion["legs"], 1):
-                print(f"   Leg {i}: {leg['player']} — {leg['prop']}  ({leg['hit_rate']}% in last {leg['games_considered']} games)")
-
-    # ====================== MAIN RESULTS OUTPUT ======================
     if not results:
-        print("\n❌ No batters met the ≥80% threshold on any prop today.")
-        data = {
-            "date": today_str,
-            "generated_at": datetime.datetime.now().isoformat(),
-            "total_qualifiers": 0,
-            "batters": [],
-            "parlay_suggestions": parlay_suggestions
-        }
+        print("❌ No batters met the ≥80% threshold on any prop today.")
+        parlays = []
     else:
-        df_results = pd.DataFrame(results)
-        df_results = df_results.sort_values(["over_1.5_H", "over_1.5_K", "over_1.5_HRR"], ascending=False)
-
-        print(f"\n=== TODAY'S PROP QUALIFIERS (>=80% on at least one threshold) ===")
+        df_results = pd.DataFrame(results).sort_values(
+            ["over_1.5_H", "over_1.5_K", "over_1.5_HRR"], ascending=False
+        )
+        print(f"\n=== TODAY'S PROP QUALIFIERS ===")
         print(f"Found {len(results)} qualifying batters")
-        print(df_results[["player",
-                          "over_0.5_H", "over_1.5_H",
-                          "over_0.5_K", "over_1.5_K",
-                          "over_1.5_HRR",
-                          "games_considered"]].to_string(index=False))
+        parlays = build_parlays(df_results)
+        print(f"Built {len(parlays)} 3-leg parlay(s)")
 
+        # Save JSON
         data = {
             "date": today_str,
             "generated_at": datetime.datetime.now().isoformat(),
             "total_qualifiers": len(results),
             "batters": df_results.to_dict("records"),
-            "parlay_suggestions": parlay_suggestions
+            "parlays": [
+                [{"player": leg["player"], "prop": get_best_prop(leg)[0], "pct": get_best_prop(leg)[1]} for leg in p]
+                for p in parlays
+            ]
         }
+        with open("daily_k_props.json", "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
 
-    # Save JSON
-    with open("daily_k_props.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-
-    print(f"\n✅ Saved {len(results)} qualifying batters + {len(parlay_suggestions)} parlay suggestions to daily_k_props.json")
+    # Send email regardless (even if empty)
+    subject   = f"MLB Prop Parlays — {today_str}"
+    html_body = build_html_email(parlays, today_str)
+    send_email(subject, html_body)
 
 
 if __name__ == "__main__":
