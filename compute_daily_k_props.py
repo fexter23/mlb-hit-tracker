@@ -65,7 +65,7 @@ def get_game_log(player_id: int):
 # ====================== MAIN COMPUTE FUNCTION ======================
 def compute_daily_k_props():
     today_str = datetime.date.today().strftime("%Y-%m-%d")
-    print(f"🚀 Computing daily prop hit rates (Hits + K + H+R+RBI) for {today_str}...")
+    print(f"🚀 Computing daily prop hot lists for {today_str}...")
 
     today_games = get_todays_games()
     if not today_games:
@@ -85,7 +85,7 @@ def compute_daily_k_props():
 
         for player_id, full_name, team_abbrev in batter_list:
             game_splits = get_game_log(player_id)
-            if len(game_splits) < 5:
+            if len(game_splits) < 5:   # Require at least 5 games
                 continue
 
             records = []
@@ -100,7 +100,7 @@ def compute_daily_k_props():
                 records.append({
                     "H": hits,
                     "K": strikeouts,
-                    "HRR": combined   # H + R + RBI
+                    "HRR": combined
                 })
 
             if not records:
@@ -113,22 +113,18 @@ def compute_daily_k_props():
             if n_games < 5:
                 continue
 
-            # Calculate hit rates
+            # Calculate percentages
             over_05_h = (pdata["H"] > 0.5).sum() / n_games * 100
             over_15_h = (pdata["H"] > 1.5).sum() / n_games * 100
             over_05_k = (pdata["K"] > 0.5).sum() / n_games * 100
             over_15_k = (pdata["K"] > 1.5).sum() / n_games * 100
-            over_15_hrr = (pdata["HRR"] > 1.5).sum() / n_games * 100   # Only 1.5 as requested
+            over_15_hrr = (pdata["HRR"] > 1.5).sum() / n_games * 100
 
-            avg_h = pdata["H"].mean()
-            avg_k = pdata["K"].mean()
-            avg_hrr = pdata["HRR"].mean()
-
-            # Include player if ≥ 80% on ANY of the props
+            # === KEY FILTER: Only include if ≥80% on AT LEAST ONE threshold ===
             if (over_05_h >= 80 or over_15_h >= 80 or 
                 over_05_k >= 80 or over_15_k >= 80 or 
                 over_15_hrr >= 80):
-                
+
                 label = f"{full_name} ({team_abbrev})"
 
                 results.append({
@@ -137,16 +133,13 @@ def compute_daily_k_props():
                     "over_1.5_H": round(over_15_h, 1),
                     "over_0.5_K": round(over_05_k, 1),
                     "over_1.5_K": round(over_15_k, 1),
-                    "over_1.5_HRR": round(over_15_hrr, 1),   # H+R+RBI > 1.5
-                    "avg_H_last10": round(avg_h, 2),
-                    "avg_K_last10": round(avg_k, 2),
-                    "avg_HRR_last10": round(avg_hrr, 2),
+                    "over_1.5_HRR": round(over_15_hrr, 1),
                     "games_considered": n_games,
                     "player_id": player_id
                 })
 
     if not results:
-        print("❌ No batters met the ≥80% hit rate threshold today.")
+        print("❌ No batters met the ≥80% threshold on any prop today.")
         data = {
             "date": today_str,
             "generated_at": datetime.datetime.now().isoformat(),
@@ -155,16 +148,15 @@ def compute_daily_k_props():
         }
     else:
         df_results = pd.DataFrame(results)
-        # Sort by strongest props first
+        # Sort by strongest props (1.5 thresholds first)
         df_results = df_results.sort_values(["over_1.5_H", "over_1.5_K", "over_1.5_HRR"], ascending=False)
 
-        print(f"\n=== TODAY'S PROP QUALIFIERS (≥80% hit rate) ===")
+        print(f"\n=== TODAY'S PROP QUALIFIERS (>=80% on at least one threshold) ===")
         print(f"Found {len(results)} qualifying batters")
         print(df_results[["player", 
                           "over_0.5_H", "over_1.5_H", 
                           "over_0.5_K", "over_1.5_K", 
                           "over_1.5_HRR", 
-                          "avg_H_last10", "avg_K_last10", "avg_HRR_last10", 
                           "games_considered"]].to_string(index=False))
 
         data = {
@@ -174,12 +166,11 @@ def compute_daily_k_props():
             "batters": df_results.to_dict("records")
         }
 
-    # Save to JSON
+    # Save JSON
     with open("daily_k_props.json", "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
     print(f"\n✅ Saved {len(results)} qualifying batters to daily_k_props.json")
-    print("File ready for Streamlit app!")
 
 
 if __name__ == "__main__":
