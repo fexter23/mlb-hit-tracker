@@ -2,11 +2,10 @@ name: Daily MLB Strikeout Props
 
 on:
   schedule:
-    # Runs every day at 6:00 AM UTC (recommended morning time)
-    # This is ~2 AM EDT / 1 AM EST (adjust if you prefer a different time)
+    # Runs every day at 6:00 AM UTC (~2 AM EDT)
     - cron: '0 6 * * *'
   
-  # Allows you to run it manually from the GitHub Actions tab
+  # Allows manual trigger from GitHub Actions tab
   workflow_dispatch:
 
 jobs:
@@ -16,6 +15,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # Fetch full history so git commit works properly
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -31,12 +33,19 @@ jobs:
       - name: Run daily strikeout props computation
         run: python compute_daily_k_props.py
 
-      - name: Commit and push updated daily_k_props.json
+      - name: Commit and push updated daily_k_props.json (if changed)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add daily_k_props.json
-          git commit -m "Update daily K props for $(date +'%Y-%m-%d')" || echo "No changes to commit"
-          git push
+          
+          # Only commit if there are actual changes
+          if git diff --quiet daily_k_props.json; then
+            echo "No changes to daily_k_props.json"
+          else
+            git add daily_k_props.json
+            git commit -m "Update daily K props for $(date +'%Y-%m-%d')"
+            git push
+            echo "✅ Updated and pushed daily_k_props.json"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
