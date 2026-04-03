@@ -3,6 +3,8 @@ import requests
 import pandas as pd
 import datetime
 import plotly.express as px
+import json
+import os
 
 # ====================== CACHED API FUNCTIONS ======================
 @st.cache_data(ttl=1800)
@@ -82,6 +84,38 @@ def get_game_log(player_id: int):
 st.set_page_config(page_title="MLB Batter Stats", page_icon="⚾", layout="wide")
 
 st.title("⚾ MLB Active Batter Recent Game Stats")
+
+# ====================== DAILY K PROP SUMMARY (NEW) ======================
+st.subheader("🔥 Today's Strikeout Prop Hot List")
+daily_file = "daily_k_props.json"
+if os.path.exists(daily_file):
+    try:
+        with open(daily_file, "r", encoding="utf-8") as f:
+            daily_data = json.load(f)
+        if daily_data.get("date") == datetime.date.today().strftime("%Y-%m-%d"):
+            daily_df = pd.DataFrame(daily_data.get("batters", []))
+            if not daily_df.empty:
+                st.dataframe(
+                    daily_df[["player", "over_0.5_K", "over_1.5_K", "avg_K_last10", "games_considered"]]
+                    .sort_values("over_1.5_K", ascending=False),
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        "over_0.5_K": st.column_config.NumberColumn("% >0.5 K", format="%.1f%%"),
+                        "over_1.5_K": st.column_config.NumberColumn("% >1.5 K", format="%.1f%%"),
+                        "avg_K_last10": st.column_config.NumberColumn("Avg K", format="%.2f"),
+                        "games_considered": st.column_config.NumberColumn("Games", format="%d"),
+                    }
+                )
+                st.caption(f"Pre-computed this morning • Last 10 games • Run compute_daily_k_props.py to refresh")
+            else:
+                st.info("No batters with data today.")
+        else:
+            st.warning("⚠️ Daily K props are outdated. Please run `python compute_daily_k_props.py`")
+    except Exception as e:
+        st.error(f"Could not load daily props: {e}")
+else:
+    st.info("👉 Run `python compute_daily_k_props.py` every morning to see today's K prop hit rates here!")
 
 # ====================== SIDEBAR FILTERS ======================
 with st.sidebar:
@@ -331,4 +365,4 @@ else:
     st.info("👈 Select a game and player from the sidebar to get started.")
 
 st.divider()
-st.caption("Active batters only • Current season • Official MLB Stats API • Strikeouts added")
+st.caption("Active batters only • Current season • Official MLB Stats API • Daily K props added")
