@@ -1,19 +1,16 @@
 {
   "date": "2026-04-03",
-  "generated_at": "2026-04-03T17:37:45.867129",
-  "total_qualifiers": 137,
+  "generated_at": "2026-04-03T17:59:18.521705",
+  "total_qualifiers": 133,
   "batters": [
     {
       "player": "Giancarlo Stanton (NYY)",
-      "over_0.5_H": 100.0,
-      "over_1.5_H": 100.0,
-      "over_0.5_K": 80.0,
+      "over_0.5_H": 83.3,
+      "over_1.5_H": 83.3,
+      "over_0.5_K": 66.7,
       "over_1.5_K": 0.0,
-      "over_1.5_HRR": 100.0,
-      "avg_H_last10": 2.0,
-      "avg_K_last10": 0.8,
-      "avg_HRR_last10": 3.2,
-      "games_considered": 5,
+      "over_1.5_HRR": 83.3,
+      "games_considered": 6,
       "player_id": 519317
     },
     {
@@ -23,9 +20,6 @@
       "over_0.5_K": 40.0,
       "over_1.5_K": 40.0,
       "over_1.5_HRR": 80.0,
-      "avg_H_last10": 2.0,
-      "avg_K_last10": 0.8,
-      "avg_HRR_last10": 4.2,
       "games_considered": 5,
       "player_id": 686894
     },
@@ -36,9 +30,6 @@
       "over_0.5_K": 66.7,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 1.5,
-      "avg_K_last10": 1.0,
-      "avg_HRR_last10": 3.0,
       "games_considered": 6,
       "player_id": 693304
     },
@@ -49,9 +40,6 @@
       "over_0.5_K": 33.3,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 83.3,
-      "avg_H_last10": 1.67,
-      "avg_K_last10": 0.33,
-      "avg_HRR_last10": 2.33,
       "games_considered": 6,
       "player_id": 802415
     },
@@ -62,9 +50,6 @@
       "over_0.5_K": 66.7,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 1.67,
-      "avg_K_last10": 0.67,
-      "avg_HRR_last10": 3.17,
       "games_considered": 6,
       "player_id": 677800
     },
@@ -75,9 +60,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 1.5,
-      "avg_K_last10": 0.83,
-      "avg_HRR_last10": 3.17,
       "games_considered": 6,
       "player_id": 607043
     },
@@ -88,9 +70,6 @@
       "over_0.5_K": 42.9,
       "over_1.5_K": 14.3,
       "over_1.5_HRR": 71.4,
-      "avg_H_last10": 1.57,
-      "avg_K_last10": 0.57,
-      "avg_HRR_last10": 2.86,
       "games_considered": 7,
       "player_id": 695734
     },
@@ -101,9 +80,6 @@
       "over_0.5_K": 57.1,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 85.7,
-      "avg_H_last10": 1.43,
-      "avg_K_last10": 0.57,
-      "avg_HRR_last10": 3.43,
       "games_considered": 7,
       "player_id": 670541
     },
@@ -114,9 +90,6 @@
       "over_0.5_K": 85.7,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 57.1,
-      "avg_H_last10": 1.43,
-      "avg_K_last10": 0.86,
-      "avg_HRR_last10": 2.57,
       "games_considered": 7,
       "player_id": 680977
     },
@@ -127,9 +100,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 83.3,
-      "avg_H_last10": 1.5,
-      "avg_K_last10": 1.83,
-      "avg_HRR_last10": 3.33,
       "games_considered": 6,
       "player_id": 669394
     },
@@ -140,9 +110,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 1.5,
-      "avg_K_last10": 1.33,
-      "avg_HRR_last10": 3.67,
       "games_considered": 6,
       "player_id": 669127
     },
@@ -153,9 +120,6 @@
       "over_0.5_K": 66.7,
       "over_1.5_K": 33.3,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 1.33,
-      "avg_K_last10": 1.0,
-      "avg_HRR_last10": 2.33,
       "games_considered": 6,
       "player_id": 690993
     },
@@ -166,9 +130,6 @@
       "over_0.5_K": 33.3,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 83.3,
-      "avg_H_last10": 1.5,
-      "avg_K_last10": 0.5,
-      "avg_HRR_last10": 2.83,
       "games_considered": 6,
       "player_id": 701398
     },
@@ -179,9 +140,6 @@
       "over_0.5_K": 66.7,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 83.3,
-      "avg_H_last10": 1.17,
-      "avg_K_last10": 0.83,
-      "avg_HRR_last10": 3.0,
       "games_considered": 6,
       "player_id": 608369
     },
@@ -192,9 +150,6 @@
       "over_0.5_K": 66.7,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 83.3,
-      "avg_H_last10": 2.0,
-      "avg_K_last10": 0.83,
-      "avg_HRR_last10": 4.17,
       "games_considered": 6,
       "player_id": 650490
     },
@@ -205,24 +160,8 @@
       "over_0.5_K": 50.0,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 83.3,
-      "avg_H_last10": 1.5,
-      "avg_K_last10": 0.67,
-      "avg_HRR_last10": 3.17,
       "games_considered": 6,
       "player_id": 643289
-    },
-    {
-      "player": "Xavier Edwards (MIA)",
-      "over_0.5_H": 100.0,
-      "over_1.5_H": 50.0,
-      "over_0.5_K": 50.0,
-      "over_1.5_K": 0.0,
-      "over_1.5_HRR": 100.0,
-      "avg_H_last10": 1.5,
-      "avg_K_last10": 0.5,
-      "avg_HRR_last10": 2.5,
-      "games_considered": 6,
-      "player_id": 669364
     },
     {
       "player": "Ernie Clement (TOR)",
@@ -231,9 +170,6 @@
       "over_0.5_K": 16.7,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 1.33,
-      "avg_K_last10": 0.17,
-      "avg_HRR_last10": 1.83,
       "games_considered": 6,
       "player_id": 676391
     },
@@ -244,11 +180,18 @@
       "over_0.5_K": 57.1,
       "over_1.5_K": 14.3,
       "over_1.5_HRR": 85.7,
-      "avg_H_last10": 1.43,
-      "avg_K_last10": 0.86,
-      "avg_HRR_last10": 2.57,
       "games_considered": 7,
       "player_id": 665742
+    },
+    {
+      "player": "Xavier Edwards (MIA)",
+      "over_0.5_H": 100.0,
+      "over_1.5_H": 42.9,
+      "over_0.5_K": 42.9,
+      "over_1.5_K": 0.0,
+      "over_1.5_HRR": 100.0,
+      "games_considered": 7,
+      "player_id": 669364
     },
     {
       "player": "Garrett Mitchell (MIL)",
@@ -257,24 +200,8 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 40.0,
       "over_1.5_HRR": 60.0,
-      "avg_H_last10": 0.8,
-      "avg_K_last10": 1.4,
-      "avg_HRR_last10": 2.4,
       "games_considered": 5,
       "player_id": 669003
-    },
-    {
-      "player": "Ben Rice (NYY)",
-      "over_0.5_H": 100.0,
-      "over_1.5_H": 40.0,
-      "over_0.5_K": 40.0,
-      "over_1.5_K": 20.0,
-      "over_1.5_HRR": 100.0,
-      "avg_H_last10": 1.4,
-      "avg_K_last10": 0.6,
-      "avg_HRR_last10": 3.6,
-      "games_considered": 5,
-      "player_id": 700250
     },
     {
       "player": "Ramón Laureano (SD)",
@@ -283,9 +210,6 @@
       "over_0.5_K": 60.0,
       "over_1.5_K": 20.0,
       "over_1.5_HRR": 80.0,
-      "avg_H_last10": 1.4,
-      "avg_K_last10": 0.8,
-      "avg_HRR_last10": 2.8,
       "games_considered": 5,
       "player_id": 657656
     },
@@ -296,9 +220,6 @@
       "over_0.5_K": 60.0,
       "over_1.5_K": 20.0,
       "over_1.5_HRR": 80.0,
-      "avg_H_last10": 1.4,
-      "avg_K_last10": 0.8,
-      "avg_HRR_last10": 2.2,
       "games_considered": 5,
       "player_id": 702222
     },
@@ -309,9 +230,6 @@
       "over_0.5_K": 40.0,
       "over_1.5_K": 20.0,
       "over_1.5_HRR": 80.0,
-      "avg_H_last10": 1.2,
-      "avg_K_last10": 0.8,
-      "avg_HRR_last10": 2.8,
       "games_considered": 5,
       "player_id": 687401
     },
@@ -322,9 +240,6 @@
       "over_0.5_K": 40.0,
       "over_1.5_K": 20.0,
       "over_1.5_HRR": 60.0,
-      "avg_H_last10": 1.6,
-      "avg_K_last10": 0.6,
-      "avg_HRR_last10": 3.4,
       "games_considered": 5,
       "player_id": 656811
     },
@@ -335,24 +250,8 @@
       "over_0.5_K": 40.0,
       "over_1.5_K": 20.0,
       "over_1.5_HRR": 40.0,
-      "avg_H_last10": 1.8,
-      "avg_K_last10": 0.6,
-      "avg_HRR_last10": 3.4,
       "games_considered": 5,
       "player_id": 664728
-    },
-    {
-      "player": "Liam Hicks (MIA)",
-      "over_0.5_H": 80.0,
-      "over_1.5_H": 40.0,
-      "over_0.5_K": 20.0,
-      "over_1.5_K": 0.0,
-      "over_1.5_HRR": 80.0,
-      "avg_H_last10": 1.4,
-      "avg_K_last10": 0.2,
-      "avg_HRR_last10": 5.0,
-      "games_considered": 5,
-      "player_id": 689414
     },
     {
       "player": "Jesús Sánchez (TOR)",
@@ -361,9 +260,6 @@
       "over_0.5_K": 40.0,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 80.0,
-      "avg_H_last10": 1.2,
-      "avg_K_last10": 0.4,
-      "avg_HRR_last10": 2.8,
       "games_considered": 5,
       "player_id": 660821
     },
@@ -374,9 +270,6 @@
       "over_0.5_K": 40.0,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 80.0,
-      "avg_H_last10": 1.2,
-      "avg_K_last10": 0.4,
-      "avg_HRR_last10": 2.6,
       "games_considered": 5,
       "player_id": 663604
     },
@@ -387,9 +280,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 40.0,
-      "avg_H_last10": 1.0,
-      "avg_K_last10": 0.8,
-      "avg_HRR_last10": 1.8,
       "games_considered": 5,
       "player_id": 687859
     },
@@ -400,9 +290,6 @@
       "over_0.5_K": 60.0,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 40.0,
-      "avg_H_last10": 1.2,
-      "avg_K_last10": 0.6,
-      "avg_HRR_last10": 2.6,
       "games_considered": 5,
       "player_id": 664040
     },
@@ -413,9 +300,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 1.0,
-      "avg_K_last10": 1.33,
-      "avg_HRR_last10": 2.17,
       "games_considered": 6,
       "player_id": 691718
     },
@@ -426,9 +310,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 1.17,
-      "avg_K_last10": 1.67,
-      "avg_HRR_last10": 3.33,
       "games_considered": 6,
       "player_id": 665833
     },
@@ -439,9 +320,6 @@
       "over_0.5_K": 66.7,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 1.17,
-      "avg_K_last10": 1.17,
-      "avg_HRR_last10": 2.0,
       "games_considered": 6,
       "player_id": 624413
     },
@@ -452,9 +330,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 1.0,
-      "avg_K_last10": 1.67,
-      "avg_HRR_last10": 2.5,
       "games_considered": 6,
       "player_id": 668804
     },
@@ -465,9 +340,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 1.0,
-      "avg_K_last10": 1.5,
-      "avg_HRR_last10": 1.67,
       "games_considered": 6,
       "player_id": 672724
     },
@@ -478,9 +350,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 33.3,
-      "avg_H_last10": 0.67,
-      "avg_K_last10": 1.33,
-      "avg_HRR_last10": 0.83,
       "games_considered": 6,
       "player_id": 691016
     },
@@ -491,9 +360,6 @@
       "over_0.5_K": 50.0,
       "over_1.5_K": 33.3,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 1.17,
-      "avg_K_last10": 0.83,
-      "avg_HRR_last10": 2.83,
       "games_considered": 6,
       "player_id": 802139
     },
@@ -504,9 +370,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 33.3,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 1.17,
-      "avg_K_last10": 1.33,
-      "avg_HRR_last10": 2.17,
       "games_considered": 6,
       "player_id": 696100
     },
@@ -517,11 +380,18 @@
       "over_0.5_K": 66.7,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 100.0,
-      "avg_H_last10": 1.5,
-      "avg_K_last10": 0.83,
-      "avg_HRR_last10": 3.33,
       "games_considered": 6,
       "player_id": 668930
+    },
+    {
+      "player": "Ben Rice (NYY)",
+      "over_0.5_H": 83.3,
+      "over_1.5_H": 33.3,
+      "over_0.5_K": 33.3,
+      "over_1.5_K": 16.7,
+      "over_1.5_HRR": 83.3,
+      "games_considered": 6,
+      "player_id": 700250
     },
     {
       "player": "Nolan Schanuel (LAA)",
@@ -530,9 +400,6 @@
       "over_0.5_K": 33.3,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 83.3,
-      "avg_H_last10": 1.17,
-      "avg_K_last10": 0.67,
-      "avg_HRR_last10": 2.5,
       "games_considered": 6,
       "player_id": 694384
     },
@@ -543,24 +410,8 @@
       "over_0.5_K": 66.7,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 1.5,
-      "avg_K_last10": 0.83,
-      "avg_HRR_last10": 2.5,
       "games_considered": 6,
       "player_id": 681198
-    },
-    {
-      "player": "Otto Lopez (MIA)",
-      "over_0.5_H": 83.3,
-      "over_1.5_H": 33.3,
-      "over_0.5_K": 50.0,
-      "over_1.5_K": 0.0,
-      "over_1.5_HRR": 66.7,
-      "avg_H_last10": 1.17,
-      "avg_K_last10": 0.5,
-      "avg_HRR_last10": 2.33,
-      "games_considered": 6,
-      "player_id": 672640
     },
     {
       "player": "Jonathan Aranda (TB)",
@@ -569,9 +420,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 1.17,
-      "avg_K_last10": 0.83,
-      "avg_HRR_last10": 2.67,
       "games_considered": 6,
       "player_id": 666018
     },
@@ -582,9 +430,6 @@
       "over_0.5_K": 50.0,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 1.17,
-      "avg_K_last10": 0.5,
-      "avg_HRR_last10": 1.83,
       "games_considered": 6,
       "player_id": 669016
     },
@@ -595,9 +440,6 @@
       "over_0.5_K": 85.7,
       "over_1.5_K": 42.9,
       "over_1.5_HRR": 57.1,
-      "avg_H_last10": 1.29,
-      "avg_K_last10": 1.43,
-      "avg_HRR_last10": 2.71,
       "games_considered": 7,
       "player_id": 621566
     },
@@ -608,9 +450,6 @@
       "over_0.5_K": 57.1,
       "over_1.5_K": 14.3,
       "over_1.5_HRR": 71.4,
-      "avg_H_last10": 1.14,
-      "avg_K_last10": 0.71,
-      "avg_HRR_last10": 2.57,
       "games_considered": 7,
       "player_id": 572233
     },
@@ -621,9 +460,6 @@
       "over_0.5_K": 85.7,
       "over_1.5_K": 14.3,
       "over_1.5_HRR": 57.1,
-      "avg_H_last10": 0.86,
-      "avg_K_last10": 1.0,
-      "avg_HRR_last10": 2.29,
       "games_considered": 7,
       "player_id": 687263
     },
@@ -634,9 +470,6 @@
       "over_0.5_K": 42.9,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 85.7,
-      "avg_H_last10": 1.14,
-      "avg_K_last10": 0.43,
-      "avg_HRR_last10": 3.57,
       "games_considered": 7,
       "player_id": 686948
     },
@@ -647,9 +480,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 40.0,
       "over_1.5_HRR": 40.0,
-      "avg_H_last10": 0.6,
-      "avg_K_last10": 1.2,
-      "avg_HRR_last10": 1.6,
       "games_considered": 5,
       "player_id": 680776
     },
@@ -660,24 +490,8 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 40.0,
       "over_1.5_HRR": 40.0,
-      "avg_H_last10": 0.8,
-      "avg_K_last10": 1.2,
-      "avg_HRR_last10": 1.4,
       "games_considered": 5,
       "player_id": 669236
-    },
-    {
-      "player": "Austin Wells (NYY)",
-      "over_0.5_H": 40.0,
-      "over_1.5_H": 20.0,
-      "over_0.5_K": 80.0,
-      "over_1.5_K": 40.0,
-      "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.6,
-      "avg_K_last10": 1.2,
-      "avg_HRR_last10": 0.8,
-      "games_considered": 5,
-      "player_id": 669224
     },
     {
       "player": "Josh Jung (TEX)",
@@ -686,9 +500,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 40.0,
       "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.4,
-      "avg_K_last10": 1.4,
-      "avg_HRR_last10": 0.6,
       "games_considered": 5,
       "player_id": 673962
     },
@@ -699,9 +510,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 40.0,
       "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.8,
-      "avg_K_last10": 1.2,
-      "avg_HRR_last10": 1.2,
       "games_considered": 5,
       "player_id": 656555
     },
@@ -712,9 +520,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 40.0,
       "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.4,
-      "avg_K_last10": 1.4,
-      "avg_HRR_last10": 1.0,
       "games_considered": 5,
       "player_id": 691723
     },
@@ -725,9 +530,6 @@
       "over_0.5_K": 40.0,
       "over_1.5_K": 20.0,
       "over_1.5_HRR": 80.0,
-      "avg_H_last10": 1.2,
-      "avg_K_last10": 0.6,
-      "avg_HRR_last10": 3.4,
       "games_considered": 5,
       "player_id": 642086
     },
@@ -738,9 +540,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 20.0,
       "over_1.5_HRR": 60.0,
-      "avg_H_last10": 0.8,
-      "avg_K_last10": 1.2,
-      "avg_HRR_last10": 1.6,
       "games_considered": 5,
       "player_id": 694212
     },
@@ -751,9 +550,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 20.0,
       "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.6,
-      "avg_K_last10": 1.2,
-      "avg_HRR_last10": 0.6,
       "games_considered": 5,
       "player_id": 666310
     },
@@ -764,24 +560,8 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 60.0,
-      "avg_H_last10": 1.2,
-      "avg_K_last10": 0.8,
-      "avg_HRR_last10": 2.6,
       "games_considered": 5,
       "player_id": 457705
-    },
-    {
-      "player": "Connor Norby (MIA)",
-      "over_0.5_H": 40.0,
-      "over_1.5_H": 20.0,
-      "over_0.5_K": 80.0,
-      "over_1.5_K": 0.0,
-      "over_1.5_HRR": 40.0,
-      "avg_H_last10": 0.6,
-      "avg_K_last10": 0.8,
-      "avg_HRR_last10": 1.0,
-      "games_considered": 5,
-      "player_id": 681393
     },
     {
       "player": "Victor Caratini (MIN)",
@@ -790,9 +570,6 @@
       "over_0.5_K": 20.0,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 40.0,
-      "avg_H_last10": 1.0,
-      "avg_K_last10": 0.2,
-      "avg_HRR_last10": 1.4,
       "games_considered": 5,
       "player_id": 605170
     },
@@ -803,9 +580,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 66.7,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 1.17,
-      "avg_K_last10": 1.83,
-      "avg_HRR_last10": 2.33,
       "games_considered": 6,
       "player_id": 672960
     },
@@ -816,9 +590,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 66.7,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 0.83,
-      "avg_K_last10": 1.83,
-      "avg_HRR_last10": 1.5,
       "games_considered": 6,
       "player_id": 701350
     },
@@ -829,9 +600,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 66.7,
       "over_1.5_HRR": 33.3,
-      "avg_H_last10": 0.67,
-      "avg_K_last10": 2.0,
-      "avg_HRR_last10": 0.83,
       "games_considered": 6,
       "player_id": 667670
     },
@@ -842,9 +610,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 16.7,
-      "avg_H_last10": 0.67,
-      "avg_K_last10": 1.5,
-      "avg_HRR_last10": 1.67,
       "games_considered": 6,
       "player_id": 695657
     },
@@ -855,24 +620,8 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 16.7,
-      "avg_H_last10": 0.33,
-      "avg_K_last10": 1.67,
-      "avg_HRR_last10": 1.0,
       "games_considered": 6,
       "player_id": 666139
-    },
-    {
-      "player": "Owen Caissie (MIA)",
-      "over_0.5_H": 83.3,
-      "over_1.5_H": 16.7,
-      "over_0.5_K": 66.7,
-      "over_1.5_K": 33.3,
-      "over_1.5_HRR": 83.3,
-      "avg_H_last10": 1.17,
-      "avg_K_last10": 1.0,
-      "avg_HRR_last10": 3.0,
-      "games_considered": 6,
-      "player_id": 683357
     },
     {
       "player": "Nasim Nuñez (WSH)",
@@ -881,9 +630,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 33.3,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 0.67,
-      "avg_K_last10": 1.17,
-      "avg_HRR_last10": 1.5,
       "games_considered": 6,
       "player_id": 683083
     },
@@ -894,9 +640,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 33.3,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 0.67,
-      "avg_K_last10": 1.5,
-      "avg_HRR_last10": 1.67,
       "games_considered": 6,
       "player_id": 683002
     },
@@ -907,9 +650,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 33.3,
       "over_1.5_HRR": 33.3,
-      "avg_H_last10": 0.67,
-      "avg_K_last10": 1.33,
-      "avg_HRR_last10": 1.17,
       "games_considered": 6,
       "player_id": 621439
     },
@@ -920,9 +660,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 33.3,
       "over_1.5_HRR": 33.3,
-      "avg_H_last10": 0.5,
-      "avg_K_last10": 1.17,
-      "avg_HRR_last10": 1.5,
       "games_considered": 6,
       "player_id": 677950
     },
@@ -933,9 +670,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 33.3,
       "over_1.5_HRR": 33.3,
-      "avg_H_last10": 0.5,
-      "avg_K_last10": 1.17,
-      "avg_HRR_last10": 1.17,
       "games_considered": 6,
       "player_id": 701807
     },
@@ -946,11 +680,18 @@
       "over_0.5_K": 50.0,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 83.3,
-      "avg_H_last10": 1.0,
-      "avg_K_last10": 0.67,
-      "avg_HRR_last10": 3.17,
       "games_considered": 6,
       "player_id": 682928
+    },
+    {
+      "player": "Dillon Dingler (DET)",
+      "over_0.5_H": 66.7,
+      "over_1.5_H": 16.7,
+      "over_0.5_K": 83.3,
+      "over_1.5_K": 16.7,
+      "over_1.5_HRR": 50.0,
+      "games_considered": 6,
+      "player_id": 693307
     },
     {
       "player": "Chase DeLauter (CLE)",
@@ -959,9 +700,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 1.0,
-      "avg_K_last10": 1.17,
-      "avg_HRR_last10": 2.67,
       "games_considered": 6,
       "player_id": 800050
     },
@@ -972,9 +710,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 0.67,
-      "avg_K_last10": 1.33,
-      "avg_HRR_last10": 2.67,
       "games_considered": 6,
       "player_id": 605137
     },
@@ -985,9 +720,6 @@
       "over_0.5_K": 50.0,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 1.0,
-      "avg_K_last10": 0.67,
-      "avg_HRR_last10": 1.5,
       "games_considered": 6,
       "player_id": 677951
     },
@@ -998,9 +730,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 0.83,
-      "avg_K_last10": 1.0,
-      "avg_HRR_last10": 2.33,
       "games_considered": 6,
       "player_id": 670623
     },
@@ -1011,9 +740,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 1.0,
-      "avg_K_last10": 1.0,
-      "avg_HRR_last10": 1.83,
       "games_considered": 6,
       "player_id": 691783
     },
@@ -1024,9 +750,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 33.3,
-      "avg_H_last10": 0.67,
-      "avg_K_last10": 1.17,
-      "avg_HRR_last10": 1.17,
       "games_considered": 6,
       "player_id": 694671
     },
@@ -1037,9 +760,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 33.3,
-      "avg_H_last10": 1.33,
-      "avg_K_last10": 1.17,
-      "avg_HRR_last10": 2.67,
       "games_considered": 6,
       "player_id": 678662
     },
@@ -1050,9 +770,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 16.7,
-      "avg_H_last10": 0.83,
-      "avg_K_last10": 1.0,
-      "avg_HRR_last10": 1.0,
       "games_considered": 6,
       "player_id": 671976
     },
@@ -1063,9 +780,6 @@
       "over_0.5_K": 33.3,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 1.17,
-      "avg_K_last10": 0.33,
-      "avg_HRR_last10": 2.17,
       "games_considered": 6,
       "player_id": 663743
     },
@@ -1076,9 +790,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 0.83,
-      "avg_K_last10": 0.83,
-      "avg_HRR_last10": 1.33,
       "games_considered": 6,
       "player_id": 592518
     },
@@ -1089,9 +800,6 @@
       "over_0.5_K": 66.7,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 1.17,
-      "avg_K_last10": 0.67,
-      "avg_HRR_last10": 2.5,
       "games_considered": 6,
       "player_id": 663538
     },
@@ -1102,9 +810,6 @@
       "over_0.5_K": 33.3,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 1.0,
-      "avg_K_last10": 0.33,
-      "avg_HRR_last10": 2.0,
       "games_considered": 6,
       "player_id": 672580
     },
@@ -1115,9 +820,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 33.3,
-      "avg_H_last10": 0.67,
-      "avg_K_last10": 0.83,
-      "avg_HRR_last10": 1.5,
       "games_considered": 6,
       "player_id": 676694
     },
@@ -1128,9 +830,6 @@
       "over_0.5_K": 85.7,
       "over_1.5_K": 42.9,
       "over_1.5_HRR": 14.3,
-      "avg_H_last10": 0.86,
-      "avg_K_last10": 1.57,
-      "avg_HRR_last10": 1.43,
       "games_considered": 7,
       "player_id": 642715
     },
@@ -1141,9 +840,6 @@
       "over_0.5_K": 57.1,
       "over_1.5_K": 28.6,
       "over_1.5_HRR": 71.4,
-      "avg_H_last10": 1.14,
-      "avg_K_last10": 1.14,
-      "avg_HRR_last10": 2.29,
       "games_considered": 7,
       "player_id": 702284
     },
@@ -1154,9 +850,6 @@
       "over_0.5_K": 85.7,
       "over_1.5_K": 28.6,
       "over_1.5_HRR": 28.6,
-      "avg_H_last10": 0.57,
-      "avg_K_last10": 1.29,
-      "avg_HRR_last10": 1.0,
       "games_considered": 7,
       "player_id": 660844
     },
@@ -1167,9 +860,6 @@
       "over_0.5_K": 85.7,
       "over_1.5_K": 28.6,
       "over_1.5_HRR": 14.3,
-      "avg_H_last10": 0.43,
-      "avg_K_last10": 1.14,
-      "avg_HRR_last10": 0.71,
       "games_considered": 7,
       "player_id": 543760
     },
@@ -1180,9 +870,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 85.7,
       "over_1.5_HRR": 42.9,
-      "avg_H_last10": 0.57,
-      "avg_K_last10": 2.0,
-      "avg_HRR_last10": 1.86,
       "games_considered": 7,
       "player_id": 624585
     },
@@ -1193,9 +880,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 80.0,
       "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.6,
-      "avg_K_last10": 1.6,
-      "avg_HRR_last10": 0.8,
       "games_considered": 5,
       "player_id": 643217
     },
@@ -1206,9 +890,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 80.0,
       "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.4,
-      "avg_K_last10": 1.8,
-      "avg_HRR_last10": 0.8,
       "games_considered": 5,
       "player_id": 694728
     },
@@ -1219,9 +900,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 80.0,
       "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.2,
-      "avg_K_last10": 2.2,
-      "avg_HRR_last10": 0.8,
       "games_considered": 5,
       "player_id": 701762
     },
@@ -1232,9 +910,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 71.4,
       "over_1.5_HRR": 42.9,
-      "avg_H_last10": 0.57,
-      "avg_K_last10": 2.14,
-      "avg_HRR_last10": 1.14,
       "games_considered": 7,
       "player_id": 663728
     },
@@ -1245,24 +920,8 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 66.7,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 0.67,
-      "avg_K_last10": 1.83,
-      "avg_HRR_last10": 1.5,
       "games_considered": 6,
       "player_id": 543807
-    },
-    {
-      "player": "Jazz Chisholm Jr. (NYY)",
-      "over_0.5_H": 66.7,
-      "over_1.5_H": 0.0,
-      "over_0.5_K": 83.3,
-      "over_1.5_K": 66.7,
-      "over_1.5_HRR": 33.3,
-      "avg_H_last10": 0.67,
-      "avg_K_last10": 1.5,
-      "avg_HRR_last10": 1.0,
-      "games_considered": 6,
-      "player_id": 665862
     },
     {
       "player": "Trevor Story (BOS)",
@@ -1271,9 +930,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 66.7,
       "over_1.5_HRR": 33.3,
-      "avg_H_last10": 0.67,
-      "avg_K_last10": 2.17,
-      "avg_HRR_last10": 1.17,
       "games_considered": 6,
       "player_id": 596115
     },
@@ -1284,9 +940,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 60.0,
       "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.6,
-      "avg_K_last10": 1.8,
-      "avg_HRR_last10": 1.4,
       "games_considered": 5,
       "player_id": 669720
     },
@@ -1297,9 +950,6 @@
       "over_0.5_K": 85.7,
       "over_1.5_K": 57.1,
       "over_1.5_HRR": 57.1,
-      "avg_H_last10": 0.57,
-      "avg_K_last10": 1.71,
-      "avg_HRR_last10": 1.57,
       "games_considered": 7,
       "player_id": 695578
     },
@@ -1310,9 +960,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 57.1,
       "over_1.5_HRR": 28.6,
-      "avg_H_last10": 0.71,
-      "avg_K_last10": 1.57,
-      "avg_HRR_last10": 1.43,
       "games_considered": 7,
       "player_id": 671218
     },
@@ -1323,9 +970,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 83.3,
-      "avg_H_last10": 0.83,
-      "avg_K_last10": 1.5,
-      "avg_HRR_last10": 2.33,
       "games_considered": 6,
       "player_id": 808959
     },
@@ -1336,9 +980,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 0.83,
-      "avg_K_last10": 1.67,
-      "avg_HRR_last10": 2.33,
       "games_considered": 6,
       "player_id": 553993
     },
@@ -1349,9 +990,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 0.83,
-      "avg_K_last10": 1.5,
-      "avg_HRR_last10": 2.5,
       "games_considered": 6,
       "player_id": 664023
     },
@@ -1359,12 +997,9 @@
       "player": "Spencer Torkelson (DET)",
       "over_0.5_H": 50.0,
       "over_1.5_H": 0.0,
-      "over_0.5_K": 83.3,
+      "over_0.5_K": 100.0,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 0.5,
-      "avg_K_last10": 1.33,
-      "avg_HRR_last10": 1.33,
       "games_considered": 6,
       "player_id": 679529
     },
@@ -1375,9 +1010,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 0.83,
-      "avg_K_last10": 1.67,
-      "avg_HRR_last10": 1.67,
       "games_considered": 6,
       "player_id": 682829
     },
@@ -1388,24 +1020,8 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 0.67,
-      "avg_K_last10": 1.67,
-      "avg_HRR_last10": 1.67,
       "games_considered": 6,
       "player_id": 691777
-    },
-    {
-      "player": "Aaron Judge (NYY)",
-      "over_0.5_H": 50.0,
-      "over_1.5_H": 0.0,
-      "over_0.5_K": 100.0,
-      "over_1.5_K": 50.0,
-      "over_1.5_HRR": 33.3,
-      "avg_H_last10": 0.5,
-      "avg_K_last10": 1.83,
-      "avg_HRR_last10": 1.33,
-      "games_considered": 6,
-      "player_id": 592450
     },
     {
       "player": "Gabriel Arias (CLE)",
@@ -1414,11 +1030,18 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 50.0,
       "over_1.5_HRR": 16.7,
-      "avg_H_last10": 0.33,
-      "avg_K_last10": 1.5,
-      "avg_HRR_last10": 0.67,
       "games_considered": 6,
       "player_id": 672356
+    },
+    {
+      "player": "Aaron Judge (NYY)",
+      "over_0.5_H": 57.1,
+      "over_1.5_H": 0.0,
+      "over_0.5_K": 85.7,
+      "over_1.5_K": 42.9,
+      "over_1.5_HRR": 42.9,
+      "games_considered": 7,
+      "player_id": 592450
     },
     {
       "player": "Kerry Carpenter (DET)",
@@ -1427,9 +1050,6 @@
       "over_0.5_K": 85.7,
       "over_1.5_K": 42.9,
       "over_1.5_HRR": 14.3,
-      "avg_H_last10": 0.43,
-      "avg_K_last10": 1.71,
-      "avg_HRR_last10": 0.71,
       "games_considered": 7,
       "player_id": 681481
     },
@@ -1440,9 +1060,6 @@
       "over_0.5_K": 60.0,
       "over_1.5_K": 40.0,
       "over_1.5_HRR": 80.0,
-      "avg_H_last10": 1.0,
-      "avg_K_last10": 1.2,
-      "avg_HRR_last10": 2.8,
       "games_considered": 5,
       "player_id": 670042
     },
@@ -1453,9 +1070,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 40.0,
       "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.4,
-      "avg_K_last10": 1.4,
-      "avg_HRR_last10": 0.8,
       "games_considered": 5,
       "player_id": 672016
     },
@@ -1466,9 +1080,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 40.0,
       "over_1.5_HRR": 0.0,
-      "avg_H_last10": 0.0,
-      "avg_K_last10": 1.2,
-      "avg_HRR_last10": 0.4,
       "games_considered": 5,
       "player_id": 680718
     },
@@ -1479,9 +1090,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 40.0,
       "over_1.5_HRR": 0.0,
-      "avg_H_last10": 0.2,
-      "avg_K_last10": 1.4,
-      "avg_HRR_last10": 0.4,
       "games_considered": 5,
       "player_id": 668715
     },
@@ -1492,9 +1100,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 33.3,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 0.67,
-      "avg_K_last10": 1.5,
-      "avg_HRR_last10": 1.67,
       "games_considered": 6,
       "player_id": 670242
     },
@@ -1505,9 +1110,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 33.3,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 0.67,
-      "avg_K_last10": 1.67,
-      "avg_HRR_last10": 1.67,
       "games_considered": 6,
       "player_id": 656941
     },
@@ -1518,9 +1120,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 33.3,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 0.5,
-      "avg_K_last10": 1.33,
-      "avg_HRR_last10": 1.5,
       "games_considered": 6,
       "player_id": 650489
     },
@@ -1531,9 +1130,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 33.3,
       "over_1.5_HRR": 16.7,
-      "avg_H_last10": 0.33,
-      "avg_K_last10": 1.33,
-      "avg_HRR_last10": 0.83,
       "games_considered": 6,
       "player_id": 695600
     },
@@ -1544,11 +1140,18 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 20.0,
       "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.4,
-      "avg_K_last10": 1.0,
-      "avg_HRR_last10": 0.8,
       "games_considered": 5,
       "player_id": 602104
+    },
+    {
+      "player": "Javier Báez (DET)",
+      "over_0.5_H": 60.0,
+      "over_1.5_H": 0.0,
+      "over_0.5_K": 80.0,
+      "over_1.5_K": 20.0,
+      "over_1.5_HRR": 20.0,
+      "games_considered": 5,
+      "player_id": 595879
     },
     {
       "player": "Brooks Lee (MIN)",
@@ -1557,9 +1160,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 20.0,
       "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.4,
-      "avg_K_last10": 1.0,
-      "avg_HRR_last10": 0.8,
       "games_considered": 5,
       "player_id": 686797
     },
@@ -1570,9 +1170,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 20.0,
       "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.4,
-      "avg_K_last10": 1.2,
-      "avg_HRR_last10": 0.8,
       "games_considered": 5,
       "player_id": 687462
     },
@@ -1583,9 +1180,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 20.0,
       "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.2,
-      "avg_K_last10": 1.2,
-      "avg_HRR_last10": 0.4,
       "games_considered": 5,
       "player_id": 643446
     },
@@ -1596,9 +1190,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 20.0,
       "over_1.5_HRR": 0.0,
-      "avg_H_last10": 0.2,
-      "avg_K_last10": 1.0,
-      "avg_HRR_last10": 0.2,
       "games_considered": 5,
       "player_id": 666397
     },
@@ -1609,9 +1200,6 @@
       "over_0.5_K": 66.7,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 83.3,
-      "avg_H_last10": 0.83,
-      "avg_K_last10": 0.83,
-      "avg_HRR_last10": 2.33,
       "games_considered": 6,
       "player_id": 669357
     },
@@ -1622,9 +1210,6 @@
       "over_0.5_K": 66.7,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 66.7,
-      "avg_H_last10": 0.83,
-      "avg_K_last10": 0.83,
-      "avg_HRR_last10": 1.5,
       "games_considered": 6,
       "player_id": 665487
     },
@@ -1635,9 +1220,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 50.0,
-      "avg_H_last10": 0.5,
-      "avg_K_last10": 1.0,
-      "avg_HRR_last10": 1.67,
       "games_considered": 6,
       "player_id": 700246
     },
@@ -1648,9 +1230,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 33.3,
-      "avg_H_last10": 0.5,
-      "avg_K_last10": 1.0,
-      "avg_HRR_last10": 1.0,
       "games_considered": 6,
       "player_id": 694208
     },
@@ -1661,9 +1240,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 16.7,
-      "avg_H_last10": 0.33,
-      "avg_K_last10": 1.33,
-      "avg_HRR_last10": 0.67,
       "games_considered": 6,
       "player_id": 670770
     },
@@ -1674,9 +1250,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 16.7,
-      "avg_H_last10": 0.5,
-      "avg_K_last10": 1.17,
-      "avg_HRR_last10": 1.17,
       "games_considered": 6,
       "player_id": 660162
     },
@@ -1687,9 +1260,6 @@
       "over_0.5_K": 83.3,
       "over_1.5_K": 16.7,
       "over_1.5_HRR": 16.7,
-      "avg_H_last10": 0.17,
-      "avg_K_last10": 1.17,
-      "avg_HRR_last10": 0.33,
       "games_considered": 6,
       "player_id": 467793
     },
@@ -1700,9 +1270,6 @@
       "over_0.5_K": 100.0,
       "over_1.5_K": 14.3,
       "over_1.5_HRR": 42.9,
-      "avg_H_last10": 0.57,
-      "avg_K_last10": 1.14,
-      "avg_HRR_last10": 1.29,
       "games_considered": 7,
       "player_id": 664056
     },
@@ -1713,9 +1280,6 @@
       "over_0.5_K": 40.0,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 80.0,
-      "avg_H_last10": 0.8,
-      "avg_K_last10": 0.4,
-      "avg_HRR_last10": 1.8,
       "games_considered": 5,
       "player_id": 681297
     },
@@ -1726,9 +1290,6 @@
       "over_0.5_K": 50.0,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 33.3,
-      "avg_H_last10": 0.83,
-      "avg_K_last10": 0.5,
-      "avg_HRR_last10": 1.33,
       "games_considered": 6,
       "player_id": 521692
     },
@@ -1739,9 +1300,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.2,
-      "avg_K_last10": 0.8,
-      "avg_HRR_last10": 0.4,
       "games_considered": 5,
       "player_id": 666023
     },
@@ -1752,9 +1310,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.4,
-      "avg_K_last10": 0.8,
-      "avg_HRR_last10": 0.6,
       "games_considered": 5,
       "player_id": 666181
     },
@@ -1765,9 +1320,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 20.0,
-      "avg_H_last10": 0.6,
-      "avg_K_last10": 0.8,
-      "avg_HRR_last10": 0.8,
       "games_considered": 5,
       "player_id": 669701
     },
@@ -1778,9 +1330,6 @@
       "over_0.5_K": 80.0,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 0.0,
-      "avg_H_last10": 0.2,
-      "avg_K_last10": 0.8,
-      "avg_HRR_last10": 0.4,
       "games_considered": 5,
       "player_id": 542303
     }
