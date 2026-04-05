@@ -1,9 +1,13 @@
+import streamlit as st
 import requests
 import pandas as pd
 import datetime
+import plotly.express as px
 import json
+import os
 
-# ====================== API FUNCTIONS ======================
+# ====================== CACHED API FUNCTIONS ======================
+@st.cache_data(ttl=1800)
 def get_todays_games():
     today = datetime.date.today().strftime("%Y-%m-%d")
     url = f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={today}&hydrate=team"
@@ -24,12 +28,13 @@ def get_todays_games():
                     "homeTeam": home.get("name"),
                     "homeAbbrev": home.get("abbreviation"),
                     "homeId": home.get("id"),
+                    "display": f"{away.get('abbreviation', '???')} @ {home.get('abbreviation', '???')} ({game.get('status', {}).get('detailedState', 'Scheduled')})"
                 })
         return games
-    except Exception as e:
-        print(f"Error fetching games: {e}")
+    except Exception:
         return []
 
+@st.cache_data(ttl=1800)
 def get_team_active_roster(team_id: int):
     url = f"https://statsapi.mlb.com/api/v1/teams/{team_id}/roster?rosterType=active"
     try:
@@ -50,6 +55,18 @@ def get_team_active_roster(team_id: int):
     except Exception:
         return []
 
+@st.cache_data(ttl=3600)
+def get_player_info(player_id: int):
+    url = f"https://statsapi.mlb.com/api/v1/people/{player_id}"
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        people = resp.json().get("people", [])
+        return people[0] if people else None
+    except Exception:
+        return None
+
+@st.cache_data(ttl=3600)
 def get_game_log(player_id: int):
     current_year = datetime.datetime.now().year
     url = f"https://statsapi.mlb.com/api/v1/people/{player_id}/stats?stats=gameLog&group=hitting&season={current_year}"
@@ -62,227 +79,328 @@ def get_game_log(player_id: int):
         return []
 
 
-# ====================== PARLAY SUGGESTION FUNCTION ======================
-def suggest_game_parlays(game_batter_stats: list, game_label: str) -> dict:
-    """
-    Given a list of batter stat dicts for one game, pick the 3 best prop legs
-    based on highest hit rate. Each candidate is a (player, prop_label, hit_rate) tuple.
+# ====================== STREAMLIT APP ======================
+st.set_page_config(page_title="MLB Batter Stats", page_icon="⚾", layout="wide")
+st.title("⚾ MLB Active Batter Recent Game Stats")
 
-    Priority order for prop selection:
-      1. Avoid duplicate players across the 3 legs (prefer variety)
-      2. Rank by hit rate descending
-      3. Prefer higher-threshold props (1.5) when hit rate is the same
-    """
-    PROP_COLUMNS = [
-        ("over_1.5_H",   "Over 1.5 Hits"),
-        ("over_0.5_H",   "Over 0.5 Hits"),
-        ("over_1.5_K",   "Over 1.5 Strikeouts"),
-        ("over_0.5_K",   "Over 0.5 Strikeouts"),
-        ("over_1.5_HRR", "Over 1.5 H+R+RBI"),
-    ]
+tab_player, tab_parlays = st.tabs(["📊 Player Stats", "🎯 Today's Parlay Suggestions"])
 
-    # Build a flat list of all (player, prop_key, prop_label, hit_rate) candidates
-    candidates = []
-    for batter in game_batter_stats:
-        for prop_key, prop_label in PROP_COLUMNS:
-            rate = batter.get(prop_key, 0)
-            if rate > 0:
-                candidates.append({
-                    "player":     batter["player"],
-                    "player_id":  batter["player_id"],
-                    "prop_key":   prop_key,
-                    "prop_label": prop_label,
-                    "hit_rate":   rate,
-                    "games_considered": batter["games_considered"],
-                })
-
-    # Sort: highest hit rate first; for ties, prefer 1.5-threshold props (they appear earlier in PROP_COLUMNS)
-    candidates.sort(key=lambda c: (-c["hit_rate"], PROP_COLUMNS.index((c["prop_key"], c["prop_label"]))))
-
-    # Greedily pick 3 legs, preferring unique players
-    selected = []
-    used_players = set()
-
-    # Pass 1: unique players only
-    for c in candidates:
-        if len(selected) == 3:
-            break
-        if c["player"] not in used_players:
-            selected.append(c)
-            used_players.add(c["player"])
-
-    # Pass 2: if we still need legs, allow repeat players (edge case with thin rosters)
-    if len(selected) < 3:
-        for c in candidates:
-            if len(selected) == 3:
-                break
-            if c not in selected:
-                selected.append(c)
-
-    if not selected:
-        return {
-            "game": game_label,
-            "note": "Insufficient data to suggest a parlay for this game.",
-            "legs": []
-        }
-
-    combined_confidence = round(
-        sum(leg["hit_rate"] for leg in selected) / len(selected), 1
-    )
-
-    return {
-        "game": game_label,
-        "avg_leg_hit_rate": combined_confidence,
-        "legs": [
-            {
-                "player":    leg["player"],
-                "prop":      leg["prop_label"],
-                "hit_rate":  leg["hit_rate"],
-                "games_considered": leg["games_considered"],
-            }
-            for leg in selected
-        ]
-    }
-
-
-# ====================== MAIN COMPUTE FUNCTION ======================
-def compute_daily_k_props():
-    today_str = datetime.date.today().strftime("%Y-%m-%d")
-    print(f"🚀 Computing daily prop hot lists for {today_str}...")
+# ====================== TAB 1: PLAYER STATS ======================
+with tab_player:
+    st.subheader("🔥 Today's Prop Hot Lists (≥80% Hit Rate - Last 10 Games)")
 
     today_games = get_todays_games()
     if not today_games:
-        print("❌ No games found for today.")
-        return
+        st.error("No games found for today.")
+        st.stop()
 
-    results = []
-    # Map gamePk -> list of qualifying batter stat dicts (for parlay builder)
-    game_batter_map: dict[int, dict] = {}
+    # Game selector
+    game_options = [g["display"] for g in today_games]
+    selected_display = st.selectbox("Select a game", options=game_options, key="game_select")
+    selected_game = next((g for g in today_games if g["display"] == selected_display), None)
 
-    for game in today_games:
-        away_batters = get_team_active_roster(game["awayId"])
-        home_batters = get_team_active_roster(game["homeId"])
+    # Hot Lists
+    daily_file = "daily_k_props.json"
+    if os.path.exists(daily_file) and selected_game:
+        try:
+            with open(daily_file, "r", encoding="utf-8") as f:
+                daily_data = json.load(f)
+
+            if daily_data.get("date") == datetime.date.today().strftime("%Y-%m-%d"):
+                daily_df = pd.DataFrame(daily_data.get("batters", []))
+
+                if not daily_df.empty:
+                    # Filter to selected game teams only
+                    away_abbrev = selected_game["awayAbbrev"]
+                    home_abbrev = selected_game["homeAbbrev"]
+                    filtered_df = daily_df[daily_df["player"].str.contains(f"\\({away_abbrev}\\)|\\({home_abbrev}\\)", regex=True)].copy()
+
+                    if not filtered_df.empty:
+                        col1, col2, col3 = st.columns(3)
+
+                        with col1:
+                            with st.expander("Hits Hot List", expanded=False):
+                                df1 = filtered_df[["player", "over_0.5_H", "over_1.5_H"]].copy()
+                                df1["avg_rate"] = ((df1["over_0.5_H"] + df1["over_1.5_H"]) / 2).round(1)
+                                st.dataframe(df1, use_container_width=True, hide_index=True,
+                                    column_config={
+                                        "player": st.column_config.TextColumn("Player"),
+                                        "over_0.5_H": st.column_config.NumberColumn("% >0.5 H", format="%.1f%%"),
+                                        "over_1.5_H": st.column_config.NumberColumn("% >1.5 H", format="%.1f%%"),
+                                        "avg_rate": st.column_config.NumberColumn("Avg Rate", format="%.1f%%"),
+                                    })
+
+                        with col2:
+                            with st.expander("Strikeouts Hot List", expanded=False):
+                                df2 = filtered_df[["player", "over_0.5_K", "over_1.5_K"]].copy()
+                                df2["avg_rate"] = ((df2["over_0.5_K"] + df2["over_1.5_K"]) / 2).round(1)
+                                st.dataframe(df2, use_container_width=True, hide_index=True,
+                                    column_config={
+                                        "player": st.column_config.TextColumn("Player"),
+                                        "over_0.5_K": st.column_config.NumberColumn("% >0.5 K", format="%.1f%%"),
+                                        "over_1.5_K": st.column_config.NumberColumn("% >1.5 K", format="%.1f%%"),
+                                        "avg_rate": st.column_config.NumberColumn("Avg Rate", format="%.1f%%"),
+                                    })
+
+                        with col3:
+                            with st.expander("H + R + RBI Hot List", expanded=False):
+                                df3 = filtered_df[["player", "over_1.5_HRR"]].copy()
+                                st.dataframe(df3, use_container_width=True, hide_index=True,
+                                    column_config={
+                                        "player": st.column_config.TextColumn("Player"),
+                                        "over_1.5_HRR": st.column_config.NumberColumn("% >1.5 HRR", format="%.1f%%"),
+                                    })
+
+                        st.caption(f"✅ Showing **{away_abbrev} @ {home_abbrev}** only • Updated today")
+                    else:
+                        st.info(f"No qualifying hot players from **{away_abbrev} @ {home_abbrev}** today.")
+                else:
+                    st.info("No qualifying batters today.")
+            else:
+                st.warning("⚠️ Daily props are outdated. Run `python compute_daily_k_props.py`")
+        except Exception as e:
+            st.error(f"Could not load daily props: {e}")
+    else:
+        st.info("Run `python compute_daily_k_props.py` to generate hot lists.")
+
+    st.divider()
+
+    # ====================== INDIVIDUAL PLAYER ANALYSIS ======================
+    with st.sidebar:
+        st.header("🎮 Individual Player Analysis")
 
         batter_list = []
-        for b in away_batters:
-            batter_list.append((b["id"], b["fullName"], game["awayAbbrev"]))
-        for b in home_batters:
-            batter_list.append((b["id"], b["fullName"], game["homeAbbrev"]))
+        if selected_game:
+            with st.spinner("Loading active batters..."):
+                away_batters = get_team_active_roster(selected_game["awayId"])
+                home_batters = get_team_active_roster(selected_game["homeId"])
 
-        game_key = game["gamePk"]
-        game_label = f"{game['awayTeam']} @ {game['homeTeam']}"
-        game_batter_map[game_key] = {"label": game_label, "batters": []}
+                for b in away_batters:
+                    label = f"{b['fullName']} ({b['position']} - {selected_game['awayAbbrev']})"
+                    batter_list.append({"label": label, "id": b["id"], "name": b["fullName"]})
 
-        for player_id, full_name, team_abbrev in batter_list:
-            game_splits = get_game_log(player_id)
-            if len(game_splits) < 5:   # Require at least 5 games
-                continue
+                for b in home_batters:
+                    label = f"{b['fullName']} ({b['position']} - {selected_game['homeAbbrev']})"
+                    batter_list.append({"label": label, "id": b["id"], "name": b["fullName"]})
 
-            records = []
-            for split in game_splits:
-                stat = split.get("stat", {})
-                hits = int(stat.get("hits", 0))
-                runs = int(stat.get("runs", 0))
-                rbi = int(stat.get("rbi", 0))
-                strikeouts = int(stat.get("strikeOuts", 0))
-                combined = hits + runs + rbi
+            batter_list = sorted(batter_list, key=lambda x: x["name"])
 
-                records.append({
-                    "H": hits,
-                    "K": strikeouts,
-                    "HRR": combined
-                })
+        if batter_list:
+            player_options = [b["label"] for b in batter_list]
 
-            if not records:
-                continue
+            col1, col2, col3 = st.columns([3, 2, 2])
 
-            df = pd.DataFrame(records)
-            pdata = df.head(10).copy()   # Last 10 games
-            n_games = len(pdata)
+            with col1:
+                selected_label = st.selectbox(
+                    "Player", 
+                    options=["— Choose player —"] + player_options,
+                    label_visibility="collapsed"
+                )
 
-            if n_games < 5:
-                continue
+            selected_batter = next((b for b in batter_list if b["label"] == selected_label), None)
+            player_id = selected_batter["id"] if selected_batter else None
 
-            # Calculate percentages
-            over_05_h = (pdata["H"] > 0.5).sum() / n_games * 100
-            over_15_h = (pdata["H"] > 1.5).sum() / n_games * 100
-            over_05_k = (pdata["K"] > 0.5).sum() / n_games * 100
-            over_15_k = (pdata["K"] > 1.5).sum() / n_games * 100
-            over_15_hrr = (pdata["HRR"] > 1.5).sum() / n_games * 100
+            with col2:
+                stat_options = ["Hits", "Runs", "RBI", "H+R+RBI", "Strikeouts"]
+                selected_stat = st.selectbox("Stat", options=stat_options, index=0, label_visibility="collapsed")
 
-            batter_stats = {
-                "player": f"{full_name} ({team_abbrev})",
-                "over_0.5_H": round(over_05_h, 1),
-                "over_1.5_H": round(over_15_h, 1),
-                "over_0.5_K": round(over_05_k, 1),
-                "over_1.5_K": round(over_15_k, 1),
-                "over_1.5_HRR": round(over_15_hrr, 1),
-                "games_considered": n_games,
-                "player_id": player_id
-            }
+            with col3:
+                if selected_stat == "Strikeouts":
+                    threshold_options = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
+                    default_threshold = 2.5
+                else:
+                    threshold_options = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5]
+                    default_threshold = 1.5
 
-            # Always store for parlay builder (all batters with enough games)
-            game_batter_map[game_key]["batters"].append(batter_stats)
-
-            # === KEY FILTER: Only include in main results if ≥80% on AT LEAST ONE threshold ===
-            if (over_05_h >= 80 or over_15_h >= 80 or
-                over_05_k >= 80 or over_15_k >= 80 or
-                over_15_hrr >= 80):
-                results.append(batter_stats)
-
-    # ====================== PARLAY SUGGESTIONS ======================
-    parlay_suggestions = []
-    print(f"\n=== TODAY'S 3-LEG PARLAY SUGGESTIONS (per game) ===")
-    for game_key, gdata in game_batter_map.items():
-        if not gdata["batters"]:
-            continue
-        suggestion = suggest_game_parlays(gdata["batters"], gdata["label"])
-        parlay_suggestions.append(suggestion)
-
-        print(f"\n🎯 {suggestion['game']}")
-        if not suggestion["legs"]:
-            print(f"   ⚠️  {suggestion.get('note', 'No legs available.')}")
+                threshold = st.selectbox(
+                    "Threshold",
+                    options=threshold_options,
+                    index=threshold_options.index(default_threshold) if default_threshold in threshold_options else 0,
+                    format_func=lambda x: f"{x:.1f}",
+                    label_visibility="collapsed"
+                )
         else:
-            print(f"   Avg leg hit rate: {suggestion['avg_leg_hit_rate']}%")
-            for i, leg in enumerate(suggestion["legs"], 1):
-                print(f"   Leg {i}: {leg['player']} — {leg['prop']}  ({leg['hit_rate']}% in last {leg['games_considered']} games)")
+            player_id = None
+            selected_stat = None
+            threshold = None
 
-    # ====================== MAIN RESULTS OUTPUT ======================
-    if not results:
-        print("\n❌ No batters met the ≥80% threshold on any prop today.")
-        data = {
-            "date": today_str,
-            "generated_at": datetime.datetime.now().isoformat(),
-            "total_qualifiers": 0,
-            "batters": [],
-            "parlay_suggestions": parlay_suggestions
-        }
+    # Player Analysis Area
+    if player_id:
+        player_info = get_player_info(player_id)
+
+        if player_info and player_info.get("primaryPosition", {}).get("code") != "P":
+            game_splits = get_game_log(player_id)
+
+            if not game_splits:
+                st.info("No hitting games found this season for this player.")
+            else:
+                records = []
+                for split in game_splits:
+                    stat = split.get("stat", {})
+                    opponent = split.get("opponent", {}).get("name") or split.get("team", {}).get("name", "N/A")
+
+                    hits = int(stat.get("hits", 0))
+                    runs = int(stat.get("runs", 0))
+                    rbi = int(stat.get("rbi", 0))
+                    strikeouts = int(stat.get("strikeOuts", 0))
+                    combined = hits + runs + rbi
+
+                    record = {
+                        "Date": split.get("date", "N/A"),
+                        "Opponent": opponent,
+                        "Home/Away": "Home" if split.get("isHome") else "Away",
+                        "AB": stat.get("atBats", 0),
+                        "R": runs,
+                        "H": hits,
+                        "HR": stat.get("homeRuns", 0),
+                        "RBI": rbi,
+                        "K": strikeouts,
+                        "H+R+RBI": combined,
+                        "AVG": stat.get("avg", ".000"),
+                        "OBP": stat.get("obp", ".000"),
+                        "SLG": stat.get("slg", ".000"),
+                    }
+                    records.append(record)
+
+                df = pd.DataFrame(records)
+                df = df.sort_values("Date", ascending=False)
+
+                if selected_stat and threshold is not None:
+                    n_games = min(10, len(df))
+                    pdata = df.head(n_games).copy()
+
+                    stat_col_map = {
+                        "Hits": "H", "Runs": "R", "RBI": "RBI",
+                        "H+R+RBI": "H+R+RBI", "Strikeouts": "K"
+                    }
+                    stat_col = stat_col_map[selected_stat]
+
+                    over_count = (pdata[stat_col] > threshold).sum()
+                    under_count = (pdata[stat_col] <= threshold).sum()
+                    over_pct = (over_count / n_games) * 100 if n_games > 0 else 0
+                    under_pct = (under_count / n_games) * 100 if n_games > 0 else 0
+
+                    over_color = '#00ff88' if over_pct > 73 else '#ffcc00' if over_pct >= 60 else '#ff5555'
+                    under_color = '#00ff88' if under_pct > 73 else '#ffcc00' if under_pct >= 60 else '#ff5555'
+
+                    st.subheader(f"🎯 {selected_stat} > {threshold:.1f} — Last {n_games} Games")
+
+                    col_o, col_u = st.columns(2)
+                    with col_o:
+                        st.markdown(
+                            f"<div style='text-align:center;'>"
+                            f"<div style='font-size:2.8em; font-weight:bold; color:{over_color};'>{over_pct:.0f}%</div>"
+                            f"<div style='color:#aaa; font-size:0.9em;'>OVER</div></div>",
+                            unsafe_allow_html=True
+                        )
+                    with col_u:
+                        st.markdown(
+                            f"<div style='text-align:center;'>"
+                            f"<div style='font-size:2.8em; font-weight:bold; color:{under_color};'>{under_pct:.0f}%</div>"
+                            f"<div style='color:#aaa; font-size:0.9em;'>UNDER</div></div>",
+                            unsafe_allow_html=True
+                        )
+
+                    results_list = (pdata[stat_col] > threshold).tolist()
+                    if results_list:
+                        streak_type = "O" if results_list[0] else "U"
+                        streak_count = 0
+                        for r in results_list:
+                            if (r and streak_type == "O") or (not r and streak_type == "U"):
+                                streak_count += 1
+                            else:
+                                break
+                        st.markdown(f"**Current streak:** {streak_type}{streak_count}")
+
+                    fig_prop = px.bar(pdata, x="Date", y=stat_col,
+                                      title=f"{selected_stat} — Last {n_games} Games", text_auto=True)
+                    fig_prop.update_traces(textposition='inside')
+                    fig_prop.add_hline(y=threshold, line_dash="dash", line_color="#00ffff",
+                                       annotation_text=f"Threshold = {threshold:.1f}",
+                                       annotation_position="top right")
+                    fig_prop.update_layout(height=380, margin=dict(t=60, b=30),
+                                           yaxis_title=None, xaxis_title=None)
+                    fig_prop.update_xaxes(type='category')
+                    st.plotly_chart(fig_prop, use_container_width=True)
+
+                st.subheader(f"Recent Games — Hitting Stats ({len(df)} games this season)")
+
+                totals_row = pd.DataFrame([{
+                    "Date": "TOTAL", "Opponent": "", "Home/Away": "",
+                    "AB": int(df["AB"].sum()), "R": df["R"].sum(), "H": df["H"].sum(),
+                    "HR": int(df["HR"].sum()), "RBI": df["RBI"].sum(),
+                    "K": int(df["K"].sum()), "H+R+RBI": df["H+R+RBI"].sum(),
+                    "AVG": "", "OBP": "", "SLG": "",
+                }])
+
+                df_display = pd.concat([df.head(20), totals_row], ignore_index=True)
+
+                st.dataframe(df_display, use_container_width=True, hide_index=True,
+                             column_config={
+                                 "H+R+RBI": st.column_config.NumberColumn("H + R + RBI", format="%d"),
+                                 "K": st.column_config.NumberColumn("Strikeouts", format="%d")
+                             })
+
+                csv = df.to_csv(index=False)
+                st.download_button(
+                    label="📥 Download full game log as CSV",
+                    data=csv,
+                    file_name=f"{player_info.get('fullName', 'batter').replace(' ', '_')}_hitting_{datetime.datetime.now().year}.csv",
+                    mime="text/csv"
+                )
+        else:
+            st.error("This player is a pitcher or invalid. Please select a batter.")
     else:
-        df_results = pd.DataFrame(results)
-        df_results = df_results.sort_values(["over_1.5_H", "over_1.5_K", "over_1.5_HRR"], ascending=False)
+        st.info("👈 Select a game and player from the sidebar.")
 
-        print(f"\n=== TODAY'S PROP QUALIFIERS (>=80% on at least one threshold) ===")
-        print(f"Found {len(results)} qualifying batters")
-        print(df_results[["player",
-                          "over_0.5_H", "over_1.5_H",
-                          "over_0.5_K", "over_1.5_K",
-                          "over_1.5_HRR",
-                          "games_considered"]].to_string(index=False))
+    st.divider()
+    st.caption("Active batters only • Current season • Official MLB Stats API")
 
-        data = {
-            "date": today_str,
-            "generated_at": datetime.datetime.now().isoformat(),
-            "total_qualifiers": len(results),
-            "batters": df_results.to_dict("records"),
-            "parlay_suggestions": parlay_suggestions
-        }
+# ====================== TAB 2: PARLAY SUGGESTIONS ======================
+with tab_parlays:
+    st.subheader("🎯 Today's 3-Leg Parlay Suggestions")
+    st.caption("Best 3 props per game ranked by hit rate over last 10 games.")
 
-    # Save JSON
-    with open("daily_k_props.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+    daily_file = "daily_k_props.json"
 
-    print(f"\n✅ Saved {len(results)} qualifying batters + {len(parlay_suggestions)} parlay suggestions to daily_k_props.json")
+    if os.path.exists(daily_file):
+        try:
+            with open(daily_file, "r", encoding="utf-8") as f:
+                daily_data = json.load(f)
 
+            parlay_suggestions = daily_data.get("parlay_suggestions", [])
 
-if __name__ == "__main__":
-    compute_daily_k_props()
+            if parlay_suggestions:
+                for suggestion in parlay_suggestions:
+                    st.markdown(f"#### ⚾ {suggestion.get('game', 'Unknown Game')}")
+
+                    if not suggestion.get("legs"):
+                        st.warning(suggestion.get("note", "No legs available."))
+                    else:
+                        avg_rate = suggestion.get("avg_leg_hit_rate", 0)
+                        badge_color = "#00ff88" if avg_rate >= 80 else "#ffcc00" if avg_rate >= 65 else "#ff5555"
+                        st.markdown(
+                            f"<span style='background:{badge_color}; color:#111; font-weight:700; "
+                            f"padding:4px 12px; border-radius:12px;'>Avg hit rate: {avg_rate}%</span>",
+                            unsafe_allow_html=True
+                        )
+
+                        for i, leg in enumerate(suggestion.get("legs", []), 1):
+                            rate = leg.get("hit_rate", 0)
+                            rate_color = "#00ff88" if rate >= 80 else "#ffcc00" if rate >= 65 else "#ff5555"
+                            st.markdown(
+                                f"**Leg {i}** — {leg['player']} — {leg['prop']} "
+                                f"<span style='color:{rate_color}; font-weight:700;'>{rate}%</span> "
+                                f"({leg.get('games_considered', '?')} games)",
+                                unsafe_allow_html=True
+                            )
+                    st.divider()
+            else:
+                st.info("No parlay suggestions available yet. Run `compute_daily_k_props.py`")
+        except Exception as e:
+            st.error(f"Could not load parlay suggestions: {e}")
+    else:
+        st.info("Run `python compute_daily_k_props.py` to generate parlay suggestions.")
+
+st.divider()
+st.caption("Active batters only • Current season • Official MLB Stats API")
