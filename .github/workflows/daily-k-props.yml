@@ -15,7 +15,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # Important for proper history
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -28,25 +28,29 @@ jobs:
           python -m pip install --upgrade pip
           pip install requests pandas
 
-      - name: Run daily strikeout props computation
+      - name: Run daily computation
         run: python compute_daily_k_props.py
 
-      - name: Commit and push daily_k_props.json (with rebase to avoid conflicts)
+      - name: Commit and push daily_k_props.json
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
+
+          # Add the file
           git add daily_k_props.json
-          
-          if git diff --staged --quiet; then
-            echo "No changes to daily_k_props.json - skipping commit"
-          else
-            # Pull with rebase to safely incorporate any remote changes
-            git pull --rebase origin main || echo "Pull failed, continuing with commit"
-            
+
+          # If there are changes, commit them
+          if ! git diff --staged --quiet; then
             git commit -m "Update daily K props for $(date +'%Y-%m-%d')"
-            git push
-            echo "✅ Updated and pushed daily_k_props.json"
+            
+            # Try normal push first, fallback to force push if needed
+            if ! git push; then
+              echo "Normal push failed, using force push to overwrite..."
+              git push --force
+            fi
+            echo "✅ Successfully pushed daily_k_props.json"
+          else
+            echo "No changes to commit"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
