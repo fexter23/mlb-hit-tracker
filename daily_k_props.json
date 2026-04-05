@@ -1,6 +1,6 @@
 {
   "date": "2026-04-05",
-  "generated_at": "2026-04-05T14:44:38.082910",
+  "generated_at": "2026-04-05T14:50:37.566928",
   "hits_qualifiers": [
     {
       "player": "CJ Abrams (WSH)",
@@ -1085,6 +1085,392 @@
       "over_1.5_HRR": 87.5,
       "games_considered": 8,
       "player_id": 668930
+    }
+  ],
+  "parlay_suggestions": [
+    {
+      "game": "Chicago Cubs @ Cleveland Guardians",
+      "avg_leg_hit_rate": 90.5,
+      "legs": [
+        {
+          "player": "Gabriel Arias (CLE)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 7
+        },
+        {
+          "player": "Ian Happ (CHC)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 85.7,
+          "games_considered": 7
+        },
+        {
+          "player": "Moisés Ballesteros (CHC)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 85.7,
+          "games_considered": 7
+        }
+      ]
+    },
+    {
+      "game": "Chicago Cubs @ Cleveland Guardians",
+      "avg_leg_hit_rate": 90.5,
+      "legs": [
+        {
+          "player": "Gabriel Arias (CLE)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 7
+        },
+        {
+          "player": "Ian Happ (CHC)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 85.7,
+          "games_considered": 7
+        },
+        {
+          "player": "Moisés Ballesteros (CHC)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 85.7,
+          "games_considered": 7
+        }
+      ]
+    },
+    {
+      "game": "Los Angeles Dodgers @ Washington Nationals",
+      "avg_leg_hit_rate": 91.1,
+      "legs": [
+        {
+          "player": "James Wood (WSH)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 8
+        },
+        {
+          "player": "Daylen Lile (WSH)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 87.5,
+          "games_considered": 8
+        },
+        {
+          "player": "CJ Abrams (WSH)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 85.7,
+          "games_considered": 7
+        }
+      ]
+    },
+    {
+      "game": "Baltimore Orioles @ Pittsburgh Pirates",
+      "avg_leg_hit_rate": 100.0,
+      "legs": [
+        {
+          "player": "Samuel Basallo (BAL)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 6
+        },
+        {
+          "player": "Bryan Reynolds (PIT)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 8
+        },
+        {
+          "player": "Oneil Cruz (PIT)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 8
+        }
+      ]
+    },
+    {
+      "game": "San Diego Padres @ Boston Red Sox",
+      "avg_leg_hit_rate": 89.2,
+      "legs": [
+        {
+          "player": "Trevor Story (BOS)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 8
+        },
+        {
+          "player": "Wilyer Abreu (BOS)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 87.5,
+          "games_considered": 8
+        },
+        {
+          "player": "Carlos Narváez (BOS)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 80.0,
+          "games_considered": 5
+        }
+      ]
+    },
+    {
+      "game": "Miami Marlins @ New York Yankees",
+      "avg_leg_hit_rate": 91.7,
+      "legs": [
+        {
+          "player": "Xavier Edwards (MIA)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 100.0,
+          "games_considered": 8
+        },
+        {
+          "player": "Aaron Judge (NYY)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 87.5,
+          "games_considered": 8
+        },
+        {
+          "player": "Jazz Chisholm Jr. (NYY)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 87.5,
+          "games_considered": 8
+        }
+      ]
+    },
+    {
+      "game": "Tampa Bay Rays @ Minnesota Twins",
+      "avg_leg_hit_rate": 95.8,
+      "legs": [
+        {
+          "player": "Byron Buxton (MIN)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 7
+        },
+        {
+          "player": "Josh Bell (MIN)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 8
+        },
+        {
+          "player": "Chandler Simpson (TB)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 87.5,
+          "games_considered": 8
+        }
+      ]
+    },
+    {
+      "game": "Toronto Blue Jays @ Chicago White Sox",
+      "avg_leg_hit_rate": 87.5,
+      "legs": [
+        {
+          "player": "Kazuma Okamoto (TOR)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 87.5,
+          "games_considered": 8
+        },
+        {
+          "player": "Munetaka Murakami (CWS)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 87.5,
+          "games_considered": 8
+        },
+        {
+          "player": "Colson Montgomery (CWS)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 87.5,
+          "games_considered": 8
+        }
+      ]
+    },
+    {
+      "game": "Milwaukee Brewers @ Kansas City Royals",
+      "avg_leg_hit_rate": 91.1,
+      "legs": [
+        {
+          "player": "Kyle Isbel (KC)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 100.0,
+          "games_considered": 7
+        },
+        {
+          "player": "Brice Turang (MIL)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 87.5,
+          "games_considered": 8
+        },
+        {
+          "player": "Garrett Mitchell (MIL)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 85.7,
+          "games_considered": 7
+        }
+      ]
+    },
+    {
+      "game": "Cincinnati Reds @ Texas Rangers",
+      "avg_leg_hit_rate": 100.0,
+      "legs": [
+        {
+          "player": "Elly De La Cruz (CIN)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 8
+        },
+        {
+          "player": "Eugenio Suárez (CIN)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 8
+        },
+        {
+          "player": "Noelvi Marte (CIN)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 5
+        }
+      ]
+    },
+    {
+      "game": "Philadelphia Phillies @ Colorado Rockies",
+      "avg_leg_hit_rate": 95.8,
+      "legs": [
+        {
+          "player": "Ezequiel Tovar (COL)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 100.0,
+          "games_considered": 8
+        },
+        {
+          "player": "Kyle Schwarber (PHI)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 8
+        },
+        {
+          "player": "Brandon Marsh (PHI)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 87.5,
+          "games_considered": 8
+        }
+      ]
+    },
+    {
+      "game": "Houston Astros @ Athletics",
+      "avg_leg_hit_rate": 87.5,
+      "legs": [
+        {
+          "player": "Jake Meyers (HOU)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 87.5,
+          "games_considered": 8
+        },
+        {
+          "player": "Max Muncy (ATH)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 87.5,
+          "games_considered": 8
+        },
+        {
+          "player": "Shea Langeliers (ATH)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 87.5,
+          "games_considered": 8
+        }
+      ]
+    },
+    {
+      "game": "New York Mets @ San Francisco Giants",
+      "avg_leg_hit_rate": 100.0,
+      "legs": [
+        {
+          "player": "Juan Soto (NYM)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 100.0,
+          "games_considered": 8
+        },
+        {
+          "player": "Harrison Bader (SF)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 9
+        },
+        {
+          "player": "Heliot Ramos (SF)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 9
+        }
+      ]
+    },
+    {
+      "game": "Seattle Mariners @ Los Angeles Angels",
+      "avg_leg_hit_rate": 100.0,
+      "legs": [
+        {
+          "player": "Cal Raleigh (SEA)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 9
+        },
+        {
+          "player": "Jorge Soler (LAA)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 9
+        },
+        {
+          "player": "Yoán Moncada (LAA)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 8
+        }
+      ]
+    },
+    {
+      "game": "Atlanta Braves @ Arizona Diamondbacks",
+      "avg_leg_hit_rate": 86.8,
+      "legs": [
+        {
+          "player": "Matt Olson (ATL)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 88.9,
+          "games_considered": 9
+        },
+        {
+          "player": "Dominic Smith (ATL)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 85.7,
+          "games_considered": 7
+        },
+        {
+          "player": "Carlos Santana (AZ)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 85.7,
+          "games_considered": 7
+        }
+      ]
+    },
+    {
+      "game": "St. Louis Cardinals @ Detroit Tigers",
+      "avg_leg_hit_rate": 95.2,
+      "legs": [
+        {
+          "player": "Kerry Carpenter (DET)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 8
+        },
+        {
+          "player": "Spencer Torkelson (DET)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 100.0,
+          "games_considered": 7
+        },
+        {
+          "player": "Colt Keith (DET)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 85.7,
+          "games_considered": 7
+        }
+      ]
     }
   ]
 }
