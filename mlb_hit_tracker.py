@@ -99,7 +99,7 @@ with tab_player:
     selected_display = st.selectbox("Select a game", options=game_options, key="game_select")
     selected_game = next((g for g in today_games if g["display"] == selected_display), None)
 
-    # Load and display Hot Lists
+    # Hot Lists
     daily_file = "daily_k_props.json"
     if os.path.exists(daily_file) and selected_game:
         try:
@@ -112,76 +112,60 @@ with tab_player:
 
                 col1, col2, col3 = st.columns(3)
 
-                # Hits Hot List
                 with col1:
                     with st.expander("Hits Hot List", expanded=False):
                         hits_list = daily_data.get("hits_qualifiers", [])
-                        df_hits = pd.DataFrame(hits_list)
-                        if not df_hits.empty:
-                            df_hits = df_hits[df_hits["player"].str.contains(f"\\({away_abbrev}\\)|\\({home_abbrev}\\)", regex=True)]
-                            if not df_hits.empty:
-                                df_hits = df_hits[["player", "over_0.5_H", "over_1.5_H"]].copy()
-                                df_hits["avg_rate"] = ((df_hits["over_0.5_H"] + df_hits["over_1.5_H"]) / 2).round(1)
-                                st.dataframe(df_hits, use_container_width=True, hide_index=True,
+                        df = pd.DataFrame(hits_list)
+                        if not df.empty:
+                            df = df[df["player"].str.contains(f"\\({away_abbrev}\\)|\\({home_abbrev}\\)", regex=True)]
+                            if not df.empty:
+                                df_display = df[["player", "over_0.5_H", "over_1.5_H"]].copy()
+                                df_display["avg_rate"] = ((df_display["over_0.5_H"] + df_display["over_1.5_H"]) / 2).round(1)
+                                st.dataframe(df_display, use_container_width=True, hide_index=True,
                                     column_config={
                                         "player": st.column_config.TextColumn("Player"),
                                         "over_0.5_H": st.column_config.NumberColumn("% >0.5 H", format="%.1f%%"),
                                         "over_1.5_H": st.column_config.NumberColumn("% >1.5 H", format="%.1f%%"),
                                         "avg_rate": st.column_config.NumberColumn("Avg Rate", format="%.1f%%"),
                                     })
-                            else:
-                                st.info("No qualifying hitters in this game.")
-                        else:
-                            st.info("No hit qualifiers today.")
 
-                # Strikeouts Hot List
                 with col2:
                     with st.expander("Strikeouts Hot List", expanded=False):
                         k_list = daily_data.get("strikeouts_qualifiers", [])
-                        df_k = pd.DataFrame(k_list)
-                        if not df_k.empty:
-                            df_k = df_k[df_k["player"].str.contains(f"\\({away_abbrev}\\)|\\({home_abbrev}\\)", regex=True)]
-                            if not df_k.empty:
-                                df_k = df_k[["player", "over_0.5_K", "over_1.5_K"]].copy()
-                                df_k["avg_rate"] = ((df_k["over_0.5_K"] + df_k["over_1.5_K"]) / 2).round(1)
-                                st.dataframe(df_k, use_container_width=True, hide_index=True,
+                        df = pd.DataFrame(k_list)
+                        if not df.empty:
+                            df = df[df["player"].str.contains(f"\\({away_abbrev}\\)|\\({home_abbrev}\\)", regex=True)]
+                            if not df.empty:
+                                df_display = df[["player", "over_0.5_K", "over_1.5_K"]].copy()
+                                df_display["avg_rate"] = ((df_display["over_0.5_K"] + df_display["over_1.5_K"]) / 2).round(1)
+                                st.dataframe(df_display, use_container_width=True, hide_index=True,
                                     column_config={
                                         "player": st.column_config.TextColumn("Player"),
                                         "over_0.5_K": st.column_config.NumberColumn("% >0.5 K", format="%.1f%%"),
                                         "over_1.5_K": st.column_config.NumberColumn("% >1.5 K", format="%.1f%%"),
                                         "avg_rate": st.column_config.NumberColumn("Avg Rate", format="%.1f%%"),
                                     })
-                            else:
-                                st.info("No qualifying strikeout candidates in this game.")
-                        else:
-                            st.info("No strikeout qualifiers today.")
 
-                # H+R+RBI Hot List
                 with col3:
                     with st.expander("H + R + RBI Hot List", expanded=False):
                         hrr_list = daily_data.get("hrr_qualifiers", [])
-                        df_hrr = pd.DataFrame(hrr_list)
-                        if not df_hrr.empty:
-                            df_hrr = df_hrr[df_hrr["player"].str.contains(f"\\({away_abbrev}\\)|\\({home_abbrev}\\)", regex=True)]
-                            if not df_hrr.empty:
-                                df_hrr = df_hrr[["player", "over_1.5_HRR"]].copy()
-                                st.dataframe(df_hrr, use_container_width=True, hide_index=True,
+                        df = pd.DataFrame(hrr_list)
+                        if not df.empty:
+                            df = df[df["player"].str.contains(f"\\({away_abbrev}\\)|\\({home_abbrev}\\)", regex=True)]
+                            if not df.empty:
+                                st.dataframe(df[["player", "over_1.5_HRR"]], use_container_width=True, hide_index=True,
                                     column_config={
                                         "player": st.column_config.TextColumn("Player"),
                                         "over_1.5_HRR": st.column_config.NumberColumn("% >1.5 HRR", format="%.1f%%"),
                                     })
-                            else:
-                                st.info("No qualifying H+R+RBI in this game.")
-                        else:
-                            st.info("No H+R+RBI qualifiers today.")
 
-                st.caption(f"✅ Filtered to **{away_abbrev} @ {home_abbrev}** • Updated today")
+                st.caption(f"✅ Showing **{away_abbrev} @ {home_abbrev}** only • Updated today")
             else:
-                st.warning("⚠️ Daily props are outdated. Please run `python compute_daily_k_props.py`")
+                st.warning("⚠️ Daily props are outdated. Run `python compute_daily_k_props.py`")
         except Exception as e:
             st.error(f"Could not load daily props: {e}")
     else:
-        st.info("Run `python compute_daily_k_props.py` to generate the hot lists.")
+        st.info("Run `python compute_daily_k_props.py` to generate hot lists.")
 
     st.divider()
 
@@ -244,7 +228,7 @@ with tab_player:
             selected_stat = None
             threshold = None
 
-    # Player Analysis
+    # ====================== MAIN PLAYER ANALYSIS (with bar charts) ======================
     if player_id:
         player_info = get_player_info(player_id)
 
@@ -285,6 +269,7 @@ with tab_player:
                 df = pd.DataFrame(records)
                 df = df.sort_values("Date", ascending=False)
 
+                # Prop Hit Rate + Bar Chart
                 if selected_stat and threshold is not None:
                     n_games = min(10, len(df))
                     pdata = df.head(n_games).copy()
@@ -321,6 +306,7 @@ with tab_player:
                             unsafe_allow_html=True
                         )
 
+                    # Streak
                     results_list = (pdata[stat_col] > threshold).tolist()
                     if results_list:
                         streak_type = "O" if results_list[0] else "U"
@@ -332,17 +318,24 @@ with tab_player:
                                 break
                         st.markdown(f"**Current streak:** {streak_type}{streak_count}")
 
-                    fig_prop = px.bar(pdata, x="Date", y=stat_col,
-                                      title=f"{selected_stat} — Last {n_games} Games", text_auto=True)
+                    # Bar Chart
+                    fig_prop = px.bar(
+                        pdata, x="Date", y=stat_col,
+                        title=f"{selected_stat} — Last {n_games} Games",
+                        text_auto=True
+                    )
                     fig_prop.update_traces(textposition='inside')
-                    fig_prop.add_hline(y=threshold, line_dash="dash", line_color="#00ffff",
-                                       annotation_text=f"Threshold = {threshold:.1f}",
-                                       annotation_position="top right")
+                    fig_prop.add_hline(
+                        y=threshold, line_dash="dash", line_color="#00ffff",
+                        annotation_text=f"Threshold = {threshold:.1f}",
+                        annotation_position="top right"
+                    )
                     fig_prop.update_layout(height=380, margin=dict(t=60, b=30),
                                            yaxis_title=None, xaxis_title=None)
                     fig_prop.update_xaxes(type='category')
                     st.plotly_chart(fig_prop, use_container_width=True)
 
+                # Game Log
                 st.subheader(f"Recent Games — Hitting Stats ({len(df)} games this season)")
 
                 totals_row = pd.DataFrame([{
@@ -371,7 +364,7 @@ with tab_player:
         else:
             st.error("This player is a pitcher or invalid. Please select a batter.")
     else:
-        st.info("👈 Select a game and player from the sidebar.")
+        st.info("👈 Select a game and player from the sidebar to get started.")
 
     st.divider()
     st.caption("Active batters only • Current season • Official MLB Stats API")
@@ -415,7 +408,7 @@ with tab_parlays:
                             )
                     st.divider()
             else:
-                st.info("No parlay suggestions available yet. Run `compute_daily_k_props.py`")
+                st.info("No parlay suggestions available yet. Run `python compute_daily_k_props.py`")
         except Exception as e:
             st.error(f"Could not load parlay suggestions: {e}")
     else:
