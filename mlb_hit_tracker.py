@@ -3,245 +3,427 @@ import requests
 import pandas as pd
 import datetime
 import plotly.express as px
+import json
+import os
+from PIL import Image 
 
-# ===============================================================
-# PAGE CONFIG (must be first Streamlit call)
-# ===============================================================
+# ====================== FAVICON & PAGE CONFIG ======================
+# This MUST be the first Streamlit command in the entire script
+
 st.set_page_config(
-    page_title="MLB Batter Analytics",
-    page_icon="⚾",
+    page_title="MLB Batter Stats",
+    page_icon="⚾",                    # fallback emoji
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-CURRENT_SEASON = datetime.datetime.now().year
-API_BASE = "https://statsapi.mlb.com/api/v1"
-
-# ===============================================================
-# GENERIC API HELPER
-# ===============================================================
-def mlb_api_get(url: str):
-    resp = requests.get(url, timeout=10)
-    resp.raise_for_status()
-    return resp.json()
-
-# ===============================================================
-# SCHEDULE & GAME DATA
-# ===============================================================
+# ====================== CACHED API FUNCTIONS ======================
 @st.cache_data(ttl=1800)
 def get_todays_games():
     today = datetime.date.today().strftime("%Y-%m-%d")
-    url = f"{API_BASE}/schedule?sportId=1&date={today}&hydrate=team"
-    data = mlb_api_get(url)
+    url = f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={today}&hydrate=team"
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        games = []
+        for date in data.get("dates", []):
+            for game in date.get("games", []):
+                away = game.get("teams", {}).get("away", {}).get("team", {})
+                home = game.get("teams", {}).get("home", {}).get("team", {})
+                games.append({
+                    "gamePk": game.get("gamePk"),
+                    "awayTeam": away.get("name"),
+                    "awayAbbrev": away.get("abbreviation"),
+                    "awayId": away.get("id"),
+                    "homeTeam": home.get("name"),
+                    "homeAbbrev": home.get("abbreviation"),
+                    "homeId": home.get("id"),
+                    "display": f"{away.get('abbreviation', '???')} @ {home.get('abbreviation', '???')} ({game.get('status', {}).get('detailedState', 'Scheduled')})"
+                })
+        return games
+    except Exception:
+        return []
 
-    games = []
-    for d in data.get("dates", []):
-        for g in d.get("games", []):
-            games.append({
-                "gamePk": g["gamePk"],
-                "homeId": g["teams"]["home"]["team"]["id"],
-                "awayId": g["teams"]["away"]["team"]["id"],
-                "display": f"{g['teams']['away']['team']['abbreviation']} @ "
-                           f"{g['teams']['home']['team']['abbreviation']} "
-                           f"({g['status']['detailedState']})"
-            })
-    return games
-
-# ===============================================================
-# ROSTERS
-# ===============================================================
 @st.cache_data(ttl=1800)
-def get_team_active_batters(team_id: int):
-    url = f"{API_BASE}/teams/{team_id}/roster?rosterType=active"
-    data = mlb_api_get(url)
+def get_team_active_roster(team_id: int):
+    url = f"https://statsapi.mlb.com/api/v1/teams/{team_id}/roster?rosterType=active"
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        roster = resp.json().get("roster", [])
+        batters = []
+        for entry in roster:
+            pos_code = entry.get("position", {}).get("code")
+            if pos_code and pos_code != "P":
+                person = entry.get("person", {})
+                batters.append({
+                    "id": person.get("id"),
+                    "fullName": person.get("fullName"),
+                    "position": entry.get("position", {}).get("abbreviation", "?")
+                })
+        return batters
+    except Exception:
+        return []
 
-    batters = []
-    for r in data.get("roster", []):
-        if r["position"]["code"] != "P":
-            batters.append({
-                "id": r["person"]["id"],
-                "name": r["person"]["fullName"]
-            })
-    return batters
-
-# ===============================================================
-# PLAYER DETAILS
-# ===============================================================
 @st.cache_data(ttl=3600)
 def get_player_info(player_id: int):
-    url = f"{API_BASE}/people/{player_id}"
-    data = mlb_api_get(url)
-    return data["people"][0]
-
-# ===============================================================
-# GAME LOG + SPLITS (ITEM 2)
-# ===============================================================
-@st.cache_data(ttl=3600)
-def get_batter_game_log(player_id: int):
-    url = (
-        f"{API_BASE}/people/{player_id}/stats"
-        f"?stats=gameLog&group=hitting&season={CURRENT_SEASON}"
-    )
-    data = mlb_api_get(url)
-    splits = data.get("stats", [])[0].get("splits", [])
-
-    return pd.DataFrame([
-        {
-            "date": s["date"],
-            "hits": int(s["stat"]["hits"]),
-            "homeAway": s["homeAway"],
-            "dayNight": s["dayNight"]
-        }
-        for s in splits
-    ])
-
-def hit_rate(df: pd.DataFrame, n=10):
-    return (df.head(n)["hits"] > 0).mean() if not df.empty else None
-
-# ===============================================================
-# PITCHER CONTEXT (ITEM 1)
-# ===============================================================
-@st.cache_data(ttl=1800)
-def get_probable_pitchers(game_pk: int):
-    url = f"{API_BASE}/game/{game_pk}/feed/live"
-    data = mlb_api_get(url)
-    return data["gameData"].get("probablePitchers", {})
+    url = f"https://statsapi.mlb.com/api/v1/people/{player_id}"
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        people = resp.json().get("people", [])
+        return people[0] if people else None
+    except Exception:
+        return None
 
 @st.cache_data(ttl=3600)
-def get_pitcher_season_stats(pitcher_id: int):
-    url = (
-        f"{API_BASE}/people/{pitcher_id}/stats"
-        f"?stats=season&group=pitching&season={CURRENT_SEASON}"
-    )
-    data = mlb_api_get(url)
-    splits = data.get("stats", [])[0].get("splits", [])
-    return splits[0]["stat"] if splits else {}
+def get_game_log(player_id: int):
+    current_year = datetime.datetime.now().year
+    url = f"https://statsapi.mlb.com/api/v1/people/{player_id}/stats?stats=gameLog&group=hitting&season={current_year}"
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        stats = resp.json().get("stats", [])
+        return stats[0].get("splits", []) if stats else []
+    except Exception:
+        return []
 
-# ===============================================================
-# LINEUP CONTEXT (ITEM 3)
-# ===============================================================
-@st.cache_data(ttl=900)
-def get_lineups(game_pk: int):
-    url = f"{API_BASE}/game/{game_pk}/feed/live"
-    data = mlb_api_get(url)
 
-    lineups = {}
-    for side in ["home", "away"]:
-        lineup = []
-        ids = data["liveData"]["boxscore"]["teams"][side].get("batters", [])
-        players = data["gameData"]["players"]
+# ====================== STREAMLIT APP ======================
+st.set_page_config(page_title="MLB Batter Stats", page_icon="⚾", layout="wide")
+st.title("⚾ MLB Active Batter Recent Game Stats")
 
-        for i, pid in enumerate(ids):
-            p = players.get(f"ID{pid}")
-            lineup.append({
-                "id": pid,
-                "name": p["fullName"],
-                "spot": i + 1
-            })
-        lineups[side] = lineup
+tab_player, tab_parlays = st.tabs(["📊 Player Stats", "🎯 Today's Parlay Suggestions"])
 
-    return lineups
+# ====================== TAB 1: PLAYER STATS ======================
+with tab_player:
+    st.subheader("🔥 Today's Prop Hot Lists (≥80% Hit Rate - Last 10 Games)")
 
-def lineup_context(lineup, batter_id):
-    for i, p in enumerate(lineup):
-        if p["id"] == batter_id:
-            return {
-                "spot": p["spot"],
-                "ahead": lineup[i - 1]["name"] if i > 0 else None,
-                "behind": lineup[i + 1]["name"] if i < len(lineup) - 1 else None
-            }
-    return None
+    today_games = get_todays_games()
+    if not today_games:
+        st.error("No games found for today.")
+        st.stop()
 
-# ===============================================================
-# STREAMLIT UI
-# ===============================================================
-st.title("⚾ MLB Batter Analytics (Stats‑Only)")
+    # Game selector
+    game_options = [g["display"] for g in today_games]
+    selected_display = st.selectbox("Select a game", options=game_options, key="game_select")
+    selected_game = next((g for g in today_games if g["display"] == selected_display), None)
 
-games = get_todays_games()
-if not games:
-    st.warning("No games found today.")
-    st.stop()
+    # Hot Lists
+    daily_file = "daily_k_props.json"
+    if os.path.exists(daily_file) and selected_game:
+        try:
+            with open(daily_file, "r", encoding="utf-8") as f:
+                daily_data = json.load(f)
 
-game = st.selectbox(
-    "Select a game",
-    games,
-    format_func=lambda g: g["display"]
-)
+            if daily_data.get("date") == datetime.date.today().strftime("%Y-%m-%d"):
+                away_abbrev = selected_game["awayAbbrev"]
+                home_abbrev = selected_game["homeAbbrev"]
 
-batters = (
-    get_team_active_batters(game["homeId"]) +
-    get_team_active_batters(game["awayId"])
-)
+                col1, col2, col3 = st.columns(3)
 
-batter = st.selectbox(
-    "Select a batter",
-    batters,
-    format_func=lambda b: b["name"]
-)
+                with col1:
+                    with st.expander("Hits Hot List", expanded=False):
+                        hits_list = daily_data.get("hits_qualifiers", [])
+                        df = pd.DataFrame(hits_list)
+                        if not df.empty:
+                            df = df[df["player"].str.contains(f"\\({away_abbrev}\\)|\\({home_abbrev}\\)", regex=True)]
+                            if not df.empty:
+                                df_display = df[["player", "over_0.5_H", "over_1.5_H"]].copy()
+                                df_display["avg_rate"] = ((df_display["over_0.5_H"] + df_display["over_1.5_H"]) / 2).round(1)
+                                st.dataframe(df_display, use_container_width=True, hide_index=True,
+                                    column_config={
+                                        "player": st.column_config.TextColumn("Player"),
+                                        "over_0.5_H": st.column_config.NumberColumn("% >0.5 H", format="%.1f%%"),
+                                        "over_1.5_H": st.column_config.NumberColumn("% >1.5 H", format="%.1f%%"),
+                                        "avg_rate": st.column_config.NumberColumn("Avg Rate", format="%.1f%%"),
+                                    })
 
-# ===============================================================
-# DATA LOAD
-# ===============================================================
-player = get_player_info(batter["id"])
-game_log = get_batter_game_log(batter["id"])
-probables = get_probable_pitchers(game["gamePk"])
-lineups = get_lineups(game["gamePk"])
+                with col2:
+                    with st.expander("Strikeouts Hot List", expanded=False):
+                        k_list = daily_data.get("strikeouts_qualifiers", [])
+                        df = pd.DataFrame(k_list)
+                        if not df.empty:
+                            df = df[df["player"].str.contains(f"\\({away_abbrev}\\)|\\({home_abbrev}\\)", regex=True)]
+                            if not df.empty:
+                                df_display = df[["player", "over_0.5_K", "over_1.5_K"]].copy()
+                                df_display["avg_rate"] = ((df_display["over_0.5_K"] + df_display["over_1.5_K"]) / 2).round(1)
+                                st.dataframe(df_display, use_container_width=True, hide_index=True,
+                                    column_config={
+                                        "player": st.column_config.TextColumn("Player"),
+                                        "over_0.5_K": st.column_config.NumberColumn("% >0.5 K", format="%.1f%%"),
+                                        "over_1.5_K": st.column_config.NumberColumn("% >1.5 K", format="%.1f%%"),
+                                        "avg_rate": st.column_config.NumberColumn("Avg Rate", format="%.1f%%"),
+                                    })
 
-# ===============================================================
-# DISPLAY: PITCHER CONTEXT
-# ===============================================================
-st.subheader("🧤 Pitcher Context")
+                with col3:
+                    with st.expander("H + R + RBI Hot List", expanded=False):
+                        hrr_list = daily_data.get("hrr_qualifiers", [])
+                        df = pd.DataFrame(hrr_list)
+                        if not df.empty:
+                            df = df[df["player"].str.contains(f"\\({away_abbrev}\\)|\\({home_abbrev}\\)", regex=True)]
+                            if not df.empty:
+                                st.dataframe(df[["player", "over_1.5_HRR"]], use_container_width=True, hide_index=True,
+                                    column_config={
+                                        "player": st.column_config.TextColumn("Player"),
+                                        "over_1.5_HRR": st.column_config.NumberColumn("% >1.5 HRR", format="%.1f%%"),
+                                    })
 
-opponent_side = "home" if batter in get_team_active_batters(game["awayId"]) else "away"
-pitcher = probables.get(opponent_side)
+                st.caption(f"✅ Showing **{away_abbrev} @ {home_abbrev}** only • Updated today")
+            else:
+                st.warning("⚠️ Daily props are outdated. Run `python compute_daily_k_props.py`")
+        except Exception as e:
+            st.error(f"Could not load daily props: {e}")
+    else:
+        st.info("Run `python compute_daily_k_props.py` to generate hot lists.")
 
-if pitcher:
-    p_stats = get_pitcher_season_stats(pitcher["id"])
-    st.write(
-        f"**Probable Pitcher:** {pitcher['fullName']} "
-        f"(Throws {pitcher['handedness']['throws']})"
-    )
-    st.write(f"ERA: {p_stats.get('era', '—')} • "
-             f"AVG Against: {p_stats.get('avg', '—')}")
-else:
-    st.info("Probable pitcher not yet announced.")
+    st.divider()
 
-# ===============================================================
-# DISPLAY: BATTER SPLITS
-# ===============================================================
-st.subheader("📊 Recent Performance & Splits")
+    # ====================== INDIVIDUAL PLAYER ANALYSIS ======================
+    with st.sidebar:
+        st.header("🎮 Individual Player Analysis")
 
-if not game_log.empty:
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Last 10 Games", f"{hit_rate(game_log,10):.0%}")
-    c2.metric("Home Games", f"{hit_rate(game_log[game_log.homeAway=='H'],10):.0%}")
-    c3.metric("Away Games", f"{hit_rate(game_log[game_log.homeAway=='A'],10):.0%}")
-    c4.metric("Night Games", f"{hit_rate(game_log[game_log.dayNight=='N'],10):.0%}")
+        batter_list = []
+        if selected_game:
+            with st.spinner("Loading active batters..."):
+                away_batters = get_team_active_roster(selected_game["awayId"])
+                home_batters = get_team_active_roster(selected_game["homeId"])
 
-    fig = px.line(
-        game_log.head(15),
-        x="date",
-        y="hits",
-        title="Hits per Game (Recent)"
-    )
-    st.plotly_chart(fig, use_container_width=True)
-else:
-    st.warning("No recent game data available.")
+                for b in away_batters:
+                    label = f"{b['fullName']} ({b['position']} - {selected_game['awayAbbrev']})"
+                    batter_list.append({"label": label, "id": b["id"], "name": b["fullName"]})
 
-# ===============================================================
-# DISPLAY: LINEUP CONTEXT
-# ===============================================================
-st.subheader("📋 Lineup Context")
+                for b in home_batters:
+                    label = f"{b['fullName']} ({b['position']} - {selected_game['homeAbbrev']})"
+                    batter_list.append({"label": label, "id": b["id"], "name": b["fullName"]})
 
-home_ctx = lineup_context(lineups["home"], batter["id"])
-away_ctx = lineup_context(lineups["away"], batter["id"])
-ctx = home_ctx or away_ctx
+            batter_list = sorted(batter_list, key=lambda x: x["name"])
 
-if ctx:
-    st.write(f"Batting **{ctx['spot']}**")
-    if ctx["ahead"]:
-        st.write(f"Ahead: {ctx['ahead']}")
-    if ctx["behind"]:
-        st.write(f"Behind: {ctx['behind']}")
-else:
-    st.info("Lineup not yet confirmed.")
+        if batter_list:
+            player_options = [b["label"] for b in batter_list]
+
+            col1, col2, col3 = st.columns([3, 2, 2])
+
+            with col1:
+                selected_label = st.selectbox(
+                    "Player", 
+                    options=["— Choose player —"] + player_options,
+                    label_visibility="collapsed"
+                )
+
+            selected_batter = next((b for b in batter_list if b["label"] == selected_label), None)
+            player_id = selected_batter["id"] if selected_batter else None
+
+            with col2:
+                stat_options = ["Hits", "Runs", "RBI", "H+R+RBI", "Strikeouts"]
+                selected_stat = st.selectbox("Stat", options=stat_options, index=0, label_visibility="collapsed")
+
+            with col3:
+                if selected_stat == "Strikeouts":
+                    threshold_options = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0]
+                    default_threshold = 2.5
+                else:
+                    threshold_options = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5]
+                    default_threshold = 1.5
+
+                threshold = st.selectbox(
+                    "Threshold",
+                    options=threshold_options,
+                    index=threshold_options.index(default_threshold) if default_threshold in threshold_options else 0,
+                    format_func=lambda x: f"{x:.1f}",
+                    label_visibility="collapsed"
+                )
+        else:
+            player_id = None
+            selected_stat = None
+            threshold = None
+
+    # ====================== MAIN PLAYER ANALYSIS (with bar charts) ======================
+    if player_id:
+        player_info = get_player_info(player_id)
+
+        if player_info and player_info.get("primaryPosition", {}).get("code") != "P":
+            game_splits = get_game_log(player_id)
+
+            if not game_splits:
+                st.info("No hitting games found this season for this player.")
+            else:
+                records = []
+                for split in game_splits:
+                    stat = split.get("stat", {})
+                    opponent = split.get("opponent", {}).get("name") or split.get("team", {}).get("name", "N/A")
+
+                    hits = int(stat.get("hits", 0))
+                    runs = int(stat.get("runs", 0))
+                    rbi = int(stat.get("rbi", 0))
+                    strikeouts = int(stat.get("strikeOuts", 0))
+                    combined = hits + runs + rbi
+
+                    record = {
+                        "Date": split.get("date", "N/A"),
+                        "Opponent": opponent,
+                        "Home/Away": "Home" if split.get("isHome") else "Away",
+                        "AB": stat.get("atBats", 0),
+                        "R": runs,
+                        "H": hits,
+                        "HR": stat.get("homeRuns", 0),
+                        "RBI": rbi,
+                        "K": strikeouts,
+                        "H+R+RBI": combined,
+                        "AVG": stat.get("avg", ".000"),
+                        "OBP": stat.get("obp", ".000"),
+                        "SLG": stat.get("slg", ".000"),
+                    }
+                    records.append(record)
+
+                df = pd.DataFrame(records)
+                df = df.sort_values("Date", ascending=False)
+
+                # Prop Hit Rate + Bar Chart
+                if selected_stat and threshold is not None:
+                    n_games = min(10, len(df))
+                    pdata = df.head(n_games).copy()
+
+                    stat_col_map = {
+                        "Hits": "H", "Runs": "R", "RBI": "RBI",
+                        "H+R+RBI": "H+R+RBI", "Strikeouts": "K"
+                    }
+                    stat_col = stat_col_map[selected_stat]
+
+                    over_count = (pdata[stat_col] > threshold).sum()
+                    under_count = (pdata[stat_col] <= threshold).sum()
+                    over_pct = (over_count / n_games) * 100 if n_games > 0 else 0
+                    under_pct = (under_count / n_games) * 100 if n_games > 0 else 0
+
+                    over_color = '#00ff88' if over_pct > 73 else '#ffcc00' if over_pct >= 60 else '#ff5555'
+                    under_color = '#00ff88' if under_pct > 73 else '#ffcc00' if under_pct >= 60 else '#ff5555'
+
+                    st.subheader(f"🎯 {selected_stat} > {threshold:.1f} — Last {n_games} Games")
+
+                    col_o, col_u = st.columns(2)
+                    with col_o:
+                        st.markdown(
+                            f"<div style='text-align:center;'>"
+                            f"<div style='font-size:2.8em; font-weight:bold; color:{over_color};'>{over_pct:.0f}%</div>"
+                            f"<div style='color:#aaa; font-size:0.9em;'>OVER</div></div>",
+                            unsafe_allow_html=True
+                        )
+                    with col_u:
+                        st.markdown(
+                            f"<div style='text-align:center;'>"
+                            f"<div style='font-size:2.8em; font-weight:bold; color:{under_color};'>{under_pct:.0f}%</div>"
+                            f"<div style='color:#aaa; font-size:0.9em;'>UNDER</div></div>",
+                            unsafe_allow_html=True
+                        )
+
+                    # Streak
+                    results_list = (pdata[stat_col] > threshold).tolist()
+                    if results_list:
+                        streak_type = "O" if results_list[0] else "U"
+                        streak_count = 0
+                        for r in results_list:
+                            if (r and streak_type == "O") or (not r and streak_type == "U"):
+                                streak_count += 1
+                            else:
+                                break
+                        st.markdown(f"**Current streak:** {streak_type}{streak_count}")
+
+                    # Bar Chart
+                    fig_prop = px.bar(
+                        pdata, x="Date", y=stat_col,
+                        title=f"{selected_stat} — Last {n_games} Games",
+                        text_auto=True
+                    )
+                    fig_prop.update_traces(textposition='inside')
+                    fig_prop.add_hline(
+                        y=threshold, line_dash="dash", line_color="#00ffff",
+                        annotation_text=f"Threshold = {threshold:.1f}",
+                        annotation_position="top right"
+                    )
+                    fig_prop.update_layout(height=380, margin=dict(t=60, b=30),
+                                           yaxis_title=None, xaxis_title=None)
+                    fig_prop.update_xaxes(type='category')
+                    st.plotly_chart(fig_prop, use_container_width=True)
+
+                # Game Log
+                st.subheader(f"Recent Games — Hitting Stats ({len(df)} games this season)")
+
+                totals_row = pd.DataFrame([{
+                    "Date": "TOTAL", "Opponent": "", "Home/Away": "",
+                    "AB": int(df["AB"].sum()), "R": df["R"].sum(), "H": df["H"].sum(),
+                    "HR": int(df["HR"].sum()), "RBI": df["RBI"].sum(),
+                    "K": int(df["K"].sum()), "H+R+RBI": df["H+R+RBI"].sum(),
+                    "AVG": "", "OBP": "", "SLG": "",
+                }])
+
+                df_display = pd.concat([df.head(20), totals_row], ignore_index=True)
+
+                st.dataframe(df_display, use_container_width=True, hide_index=True,
+                             column_config={
+                                 "H+R+RBI": st.column_config.NumberColumn("H + R + RBI", format="%d"),
+                                 "K": st.column_config.NumberColumn("Strikeouts", format="%d")
+                             })
+
+                csv = df.to_csv(index=False)
+                st.download_button(
+                    label="📥 Download full game log as CSV",
+                    data=csv,
+                    file_name=f"{player_info.get('fullName', 'batter').replace(' ', '_')}_hitting_{datetime.datetime.now().year}.csv",
+                    mime="text/csv"
+                )
+        else:
+            st.error("This player is a pitcher or invalid. Please select a batter.")
+    else:
+        st.info("👈 Select a game and player from the sidebar to get started.")
+
+    st.divider()
+    st.caption("Active batters only • Current season • Official MLB Stats API")
+
+# ====================== TAB 2: PARLAY SUGGESTIONS ======================
+with tab_parlays:
+    st.subheader("🎯 Today's 3-Leg Parlay Suggestions")
+
+    daily_file = "daily_k_props.json"
+
+    if os.path.exists(daily_file):
+        try:
+            with open(daily_file, "r", encoding="utf-8") as f:
+                daily_data = json.load(f)
+
+            parlay_suggestions = daily_data.get("parlay_suggestions", [])
+
+            if parlay_suggestions:
+                for suggestion in parlay_suggestions:
+                    st.markdown(f"#### ⚾ {suggestion.get('game', 'Unknown Game')}")
+
+                    if not suggestion.get("legs"):
+                        st.warning(suggestion.get("note", "No legs available."))
+                    else:
+                        avg_rate = suggestion.get("avg_leg_hit_rate", 0)
+                        badge_color = "#00ff88" if avg_rate >= 80 else "#ffcc00" if avg_rate >= 65 else "#ff5555"
+                        st.markdown(
+                            f"<span style='background:{badge_color}; color:#111; font-weight:700; "
+                            f"padding:4px 12px; border-radius:12px;'>Avg hit rate: {avg_rate}%</span>",
+                            unsafe_allow_html=True
+                        )
+
+                        for i, leg in enumerate(suggestion.get("legs", []), 1):
+                            rate = leg.get("hit_rate", 0)
+                            rate_color = "#00ff88" if rate >= 80 else "#ffcc00" if rate >= 65 else "#ff5555"
+                            st.markdown(
+                                f"**Leg {i}** — {leg['player']} — {leg['prop']} "
+                                f"<span style='color:{rate_color}; font-weight:700;'>{rate}%</span> "
+                                f"({leg.get('games_considered', '?')} games)",
+                                unsafe_allow_html=True
+                            )
+                    st.divider()
+            else:
+                st.info("No parlay suggestions available yet. Run `python compute_daily_k_props.py`")
+        except Exception as e:
+            st.error(f"Could not load parlay suggestions: {e}")
+    else:
+        st.info("Run `python compute_daily_k_props.py` to generate parlay suggestions.")
+
+st.divider()
+st.caption("Active batters only • Current season • Official MLB Stats API")
