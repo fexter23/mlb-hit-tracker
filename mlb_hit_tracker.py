@@ -5,6 +5,17 @@ import datetime
 import plotly.express as px
 import json
 import os
+from PIL import Image 
+
+# ====================== FAVICON & PAGE CONFIG ======================
+# This MUST be the first Streamlit command in the entire script
+
+st.set_page_config(
+    page_title="MLB Batter Stats",
+    page_icon="⚾",                    # fallback emoji
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
 
 # ====================== CACHED API FUNCTIONS ======================
 @st.cache_data(ttl=1800)
