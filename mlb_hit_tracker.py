@@ -1,4 +1,32 @@
-import streamlit as st
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        
+        :root {
+            --primary: #00ff88;
+        }
+        
+        * {
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        
+        .stApp {
+            background: #0a0a0a;
+        }
+        
+        .pinned-header {
+            background: linear-gradient(90deg, #1a1a2e, #16213e);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #00ff88;
+        }
+    </style>
+</head>
+<body>
+    <pre><code>import streamlit as st
 import requests
 import pandas as pd
 import datetime
@@ -6,6 +34,8 @@ import plotly.express as px
 import json
 import os
 from PIL import Image 
+import numpy as np
+from datetime import datetime
 
 # ====================== FAVICON & PAGE CONFIG ======================
 # This MUST be the first Streamlit command in the entire script
@@ -16,6 +46,19 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# ====================== ODDS OPTIONS & SESSION STATE ======================
+odds_options = ["", "-300", "-275", "-250","-245","-240","-235","-230", "-225", "-220",
+                "-215","-210","-205","-200", "-195","-190", "-185","-180","-175", "-170",
+                "-165","-160", "-155", "-150", "-145", "-140", "-135", "-130", "-125",
+                "-120", "-115", "-112" ,"-110", "-105", "-100", "+100", "+102", "+105",
+                "+110", "+115", "+118", "+120", "+125", "+130", "+135", "+140", "+145",
+                "+150", "+155", "+160", "+165", "+170", "+175", "+180", "+185", "+190",
+                "+195", "+200", "+210", "+220", "+230", "+240", "+250", "+275", "+300"]
+
+# Session state for pinned props dashboard (shared across reruns)
+if 'my_board' not in st.session_state:
+    st.session_state.my_board = []
 
 # ====================== CACHED API FUNCTIONS ======================
 @st.cache_data(ttl=1800)
@@ -89,6 +132,44 @@ def get_game_log(player_id: int):
     except Exception:
         return []
 
+# NEW: Cached function to build clean game log DataFrame (used in both sidebar pin + main display)
+@st.cache_data(ttl=3600)
+def get_player_game_df(player_id: int):
+    game_splits = get_game_log(player_id)
+    if not game_splits:
+        return pd.DataFrame()
+    
+    records = []
+    for split in game_splits:
+        stat = split.get("stat", {})
+        opponent = split.get("opponent", {}).get("name") or split.get("team", {}).get("name", "N/A")
+
+        hits = int(stat.get("hits", 0))
+        runs = int(stat.get("runs", 0))
+        rbi = int(stat.get("rbi", 0))
+        strikeouts = int(stat.get("strikeOuts", 0))
+        combined = hits + runs + rbi
+
+        record = {
+            "Date": split.get("date", "N/A"),
+            "Opponent": opponent,
+            "Home/Away": "Home" if split.get("isHome") else "Away",
+            "AB": stat.get("atBats", 0),
+            "R": runs,
+            "H": hits,
+            "HR": stat.get("homeRuns", 0),
+            "RBI": rbi,
+            "K": strikeouts,
+            "H+R+RBI": combined,
+            "AVG": stat.get("avg", ".000"),
+            "OBP": stat.get("obp", ".000"),
+            "SLG": stat.get("slg", ".000"),
+        }
+        records.append(record)
+    
+    df = pd.DataFrame(records)
+    df = df.sort_values("Date", ascending=False)
+    return df
 
 # ====================== STREAMLIT APP ======================
 st.set_page_config(page_title="MLB Batter Stats", page_icon="⚾", layout="wide")
@@ -110,7 +191,7 @@ with tab_player:
     selected_display = st.selectbox("Select a game", options=game_options, key="game_select")
     selected_game = next((g for g in today_games if g["display"] == selected_display), None)
 
-    # Hot Lists
+    # Hot Lists (unchanged)
     daily_file = "daily_k_props.json"
     if os.path.exists(daily_file) and selected_game:
         try:
@@ -180,7 +261,7 @@ with tab_player:
 
     st.divider()
 
-    # ====================== INDIVIDUAL PLAYER ANALYSIS ======================
+    # ====================== SIDEBAR: INDIVIDUAL PLAYER ANALYSIS + PINNED DASHBOARD ======================
     with st.sidebar:
         st.header("🎮 Individual Player Analysis")
 
@@ -203,7 +284,8 @@ with tab_player:
         if batter_list:
             player_options = [b["label"] for b in batter_list]
 
-            col1, col2, col3 = st.columns([3, 2, 2])
+            # === FOUR-COLUMN LAYOUT: Player | Stat | Threshold | Odds ===
+            col1, col2, col3, col4 = st.columns([3, 1.8, 1.6, 1.6])
 
             with col1:
                 selected_label = st.selectbox(
@@ -234,52 +316,210 @@ with tab_player:
                     format_func=lambda x: f"{x:.1f}",
                     label_visibility="collapsed"
                 )
-        else:
-            player_id = None
-            selected_stat = None
-            threshold = None
 
-    # ====================== MAIN PLAYER ANALYSIS (with bar charts) ======================
+            # === NEW: Odds dropdown right next to threshold ===
+            with col4:
+                if selected_batter and selected_stat:
+                    odds_key = f"mlb_odds_{selected_batter['id']}_{selected_stat.replace(' ', '_')}"
+                else:
+                    odds_key = "mlb_odds_dummy"
+                selected_odds = st.selectbox(
+                    "Odds",
+                    options=odds_options,
+                    key=odds_key,
+                    label_visibility="collapsed"
+                )
+
+            # === PIN BUTTON (appears when everything is selected) ===
+            if selected_batter and selected_stat and threshold is not None:
+                if st.button("📌 Pin to Board", use_container_width=True, type="primary"):
+                    # Build game log DataFrame (cached)
+                    df_pin = get_player_game_df(player_id)
+                    
+                    if df_pin.empty:
+                        st.warning("No game data available for this player yet.")
+                    else:
+                        stat_col_map = {
+                            "Hits": "H", "Runs": "R", "RBI": "RBI",
+                            "H+R+RBI": "H+R+RBI", "Strikeouts": "K"
+                        }
+                        stat_col = stat_col_map.get(selected_stat)
+                        
+                        if stat_col:
+                            # Hit rates for L5 + L10 (exactly like NBA)
+                            windows = [w for w in [5, 10] if len(df_pin) >= w]
+                            over_list = []
+                            for w in windows:
+                                recent_w = df_pin.head(w)
+                                hit_pct = (recent_w[stat_col] > threshold).mean() * 100
+                                over_list.append(hit_pct)
+                            
+                            window_labels = [f"L{w}" for w in windows]
+                            parts = []
+                            for pct, lbl in zip(over_list, window_labels):
+                                color = '#00ff88' if pct > 73 else '#ffcc00' if pct >= 60 else '#ff5555'
+                                parts.append(f"<span style='color:{color}'>{pct:.0f}%</span> ({lbl})")
+                            hit_str = " | ".join(parts)
+                            
+                            # Current streak (full history, most recent first)
+                            results_list = (df_pin[stat_col] > threshold).tolist()
+                            streak_type = "O" if results_list and results_list[0] else "U"
+                            streak_count = 0
+                            for r in results_list:
+                                if (r and streak_type == "O") or (not r and streak_type == "U"):
+                                    streak_count += 1
+                                else:
+                                    break
+                            
+                            # Average hit rate styling
+                            avg_o = np.mean(over_list) if over_list else 0
+                            avg_u = 100 - avg_o
+                            avg_color_o = '#00ff88' if avg_o > 75 else '#ffcc00' if avg_o >= 61 else '#ff5555'
+                            avg_color_u = '#00ff88' if avg_u > 75 else '#ffcc00' if avg_u >= 61 else '#ff5555'
+                            
+                            avg_text = (
+                                f" AVG: <span style='color:{avg_color_o}'>O {avg_o:.0f}%</span> / "
+                                f"<span style='color:{avg_color_u}'>U {avg_u:.0f}%</span> | "
+                                f"**{streak_type}{streak_count}**"
+                            )
+                            hitrate_str = hit_str + avg_text
+                            
+                            # Build pinned entry
+                            entry = {
+                                "player": selected_label,           # includes team & position
+                                "matchup": selected_game["display"] if selected_game else "N/A",
+                                "stat": selected_stat,
+                                "line": f"{threshold:.1f}",
+                                "odds": selected_odds,
+                                "hitrate_str": hitrate_str,
+                                "timestamp": datetime.now()
+                            }
+                            
+                            # Avoid duplicates
+                            if not any(
+                                e['player'] == entry['player'] and 
+                                e['stat'] == entry['stat'] and 
+                                e['line'] == entry['line']
+                                for e in st.session_state.my_board
+                            ):
+                                st.session_state.my_board.append(entry)
+                                st.toast(f"✅ Pinned → {selected_label} • {selected_stat} {threshold:.1f}", icon="📌")
+                                st.rerun()
+
+        # ====================== PINNED PROPS DASHBOARD (always visible in sidebar) ======================
+        st.divider()
+        st.subheader("📌 Pinned Props Dashboard")
+        
+        if st.session_state.my_board:
+            dash_df = pd.DataFrame(st.session_state.my_board)
+            dash_df['match_key'] = dash_df['matchup']
+            
+            for match, group in dash_df.groupby('match_key'):
+                # Calculate combined parlay-style payout (exactly like NBA)
+                total_payout = 1.0
+                try:
+                    multiplier = 1.0
+                    for _, row in group.iterrows():
+                        o = row.get('odds', '')
+                        if not o or str(o).strip() == "": 
+                            continue
+                        val = float(str(o).replace('+', ''))
+                        if val > 0:
+                            multiplier *= (val / 100 + 1)
+                        else:
+                            multiplier *= (100 / abs(val) + 1)
+                    total_payout = multiplier
+                except:
+                    total_payout = 1.0
+
+                prop_count = len(group)
+
+                col_left, col_middle, col_right = st.columns([0.12, 0.76, 0.12])
+
+                with col_left:
+                    st.checkbox("", key=f"check_mlb_{match}", label_visibility="collapsed")
+
+                with col_middle:
+                    with st.expander(
+                        f"⚾ {match} | :green[${total_payout:.2f}] | ({prop_count})",
+                        expanded=True
+                    ):
+                        group_sorted = group.sort_values(by='timestamp', ascending=False)
+                        for _, entry in group_sorted.iterrows():
+                            col_t, col_d = st.columns([0.8, 0.2])
+                            with col_t:
+                                odds_d = f" @ **{entry.get('odds', '')}**" if entry.get('odds') else ""
+                                st.markdown(
+                                    f"**{entry['player']}**"
+                                    f" | > {entry['stat']} {entry['line']}{odds_d}<br>"
+                                    f"<small>{entry.get('hitrate_str', '—')}</small>",
+                                    unsafe_allow_html=True
+                                )
+                            with col_d:
+                                if st.button("🗑️", key=f"del_mlb_{entry['player']}_{entry['stat']}_{str(entry.get('timestamp',''))}"):
+                                    st.session_state.my_board = [
+                                        d for d in st.session_state.my_board
+                                        if not (d['player'] == entry['player'] and 
+                                                d['stat'] == entry['stat'] and 
+                                                d['line'] == entry['line'])
+                                    ]
+                                    st.rerun()
+
+                with col_right:
+                    if st.button("x", key=f"del_group_mlb_{match}", help="Delete entire group"):
+                        st.session_state.my_board = [
+                            d for d in st.session_state.my_board
+                            if d['matchup'] != match
+                        ]
+                        st.rerun()
+        else:
+            st.caption("No props pinned yet. Select a player, stat, threshold + odds above and hit **Pin to Board**.")
+
+        st.divider()
+        
+        # Board import/export (exactly like NBA)
+        def get_board_json():
+            data = []
+            for entry in st.session_state.my_board:
+                item = entry.copy()
+                if isinstance(item.get('timestamp'), datetime):
+                    item['timestamp'] = item['timestamp'].isoformat()
+                data.append(item)
+            return json.dumps(data)
+
+        dynamic_filename = f"mlb_board_{datetime.now().strftime('%Y%m%d_%H%M')}.json"
+
+        st.download_button(
+            label="📥 Download Board", 
+            data=get_board_json(), 
+            file_name=dynamic_filename, 
+            mime="application/json"
+        )
+
+        uploaded_file = st.file_uploader("📤 Upload Board", type="json")
+        if uploaded_file is not None:
+            try:
+                data = json.load(uploaded_file)
+                for entry in data:
+                    if isinstance(entry.get('timestamp'), str):
+                        entry['timestamp'] = datetime.fromisoformat(entry['timestamp'])
+                st.session_state.my_board = data
+                st.success("✅ Board restored successfully!")
+                st.rerun()
+            except Exception as e:
+                st.error(f"Error loading file: {e}")
+
+    # ====================== MAIN PLAYER ANALYSIS (unchanged except using new cached DF) ======================
     if player_id:
         player_info = get_player_info(player_id)
 
         if player_info and player_info.get("primaryPosition", {}).get("code") != "P":
-            game_splits = get_game_log(player_id)
+            # Use the new cached function (no duplication)
+            df = get_player_game_df(player_id)
 
-            if not game_splits:
+            if df.empty:
                 st.info("No hitting games found this season for this player.")
             else:
-                records = []
-                for split in game_splits:
-                    stat = split.get("stat", {})
-                    opponent = split.get("opponent", {}).get("name") or split.get("team", {}).get("name", "N/A")
-
-                    hits = int(stat.get("hits", 0))
-                    runs = int(stat.get("runs", 0))
-                    rbi = int(stat.get("rbi", 0))
-                    strikeouts = int(stat.get("strikeOuts", 0))
-                    combined = hits + runs + rbi
-
-                    record = {
-                        "Date": split.get("date", "N/A"),
-                        "Opponent": opponent,
-                        "Home/Away": "Home" if split.get("isHome") else "Away",
-                        "AB": stat.get("atBats", 0),
-                        "R": runs,
-                        "H": hits,
-                        "HR": stat.get("homeRuns", 0),
-                        "RBI": rbi,
-                        "K": strikeouts,
-                        "H+R+RBI": combined,
-                        "AVG": stat.get("avg", ".000"),
-                        "OBP": stat.get("obp", ".000"),
-                        "SLG": stat.get("slg", ".000"),
-                    }
-                    records.append(record)
-
-                df = pd.DataFrame(records)
-                df = df.sort_values("Date", ascending=False)
-
                 # Prop Hit Rate + Bar Chart
                 if selected_stat and threshold is not None:
                     n_games = min(10, len(df))
@@ -380,7 +620,7 @@ with tab_player:
     st.divider()
     st.caption("Active batters only • Current season • Official MLB Stats API")
 
-# ====================== TAB 2: PARLAY SUGGESTIONS ======================
+# ====================== TAB 2: PARLAY SUGGESTIONS (unchanged) ======================
 with tab_parlays:
     st.subheader("🎯 Today's 3-Leg Parlay Suggestions")
 
@@ -427,3 +667,6 @@ with tab_parlays:
 
 st.divider()
 st.caption("Active batters only • Current season • Official MLB Stats API")
+</code></pre>
+</body>
+</html>
