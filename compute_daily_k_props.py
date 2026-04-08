@@ -96,7 +96,7 @@ def compute_daily_k_props():
                 continue
 
             records = []
-            for split in game_splits:
+            for split in reversed(game_splits):
                 stat = split.get("stat", {})
                 hits = int(stat.get("hits", 0))
                 runs = int(stat.get("runs", 0))
