@@ -1,6 +1,6 @@
 {
   "date": "2026-04-09",
-  "generated_at": "2026-04-09T00:10:15.724800",
+  "generated_at": "2026-04-09T07:23:13.470293",
   "hits_qualifiers": [
     {
       "player": "Otto Lopez (MIA)",
@@ -16,7 +16,7 @@
       "player": "Xavier Edwards (MIA)",
       "over_0.5_H": 80.0,
       "over_1.5_H": 70.0,
-      "over_0.5_K": 40.0,
+      "over_0.5_K": 50.0,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 80.0,
       "games_considered": 10,
@@ -24,11 +24,11 @@
     },
     {
       "player": "Max Muncy (ATH)",
-      "over_0.5_H": 80.0,
+      "over_0.5_H": 90.0,
       "over_1.5_H": 30.0,
       "over_0.5_K": 80.0,
       "over_1.5_K": 40.0,
-      "over_1.5_HRR": 70.0,
+      "over_1.5_HRR": 80.0,
       "games_considered": 10,
       "player_id": 691777
     },
@@ -53,11 +53,31 @@
       "player_id": 519317
     },
     {
+      "player": "Colt Keith (DET)",
+      "over_0.5_H": 80.0,
+      "over_1.5_H": 30.0,
+      "over_0.5_K": 70.0,
+      "over_1.5_K": 20.0,
+      "over_1.5_HRR": 70.0,
+      "games_considered": 10,
+      "player_id": 690993
+    },
+    {
+      "player": "Luke Keaschall (MIN)",
+      "over_0.5_H": 80.0,
+      "over_1.5_H": 10.0,
+      "over_0.5_K": 50.0,
+      "over_1.5_K": 10.0,
+      "over_1.5_HRR": 60.0,
+      "games_considered": 10,
+      "player_id": 807712
+    },
+    {
       "player": "Matt Wallner (MIN)",
       "over_0.5_H": 90.0,
       "over_1.5_H": 20.0,
-      "over_0.5_K": 80.0,
-      "over_1.5_K": 70.0,
+      "over_0.5_K": 90.0,
+      "over_1.5_K": 80.0,
       "over_1.5_HRR": 80.0,
       "games_considered": 10,
       "player_id": 670242
@@ -148,7 +168,7 @@
       "player": "Eugenio Suárez (CIN)",
       "over_0.5_H": 70.0,
       "over_1.5_H": 20.0,
-      "over_0.5_K": 80.0,
+      "over_0.5_K": 90.0,
       "over_1.5_K": 30.0,
       "over_1.5_HRR": 60.0,
       "games_considered": 10,
@@ -156,7 +176,7 @@
     },
     {
       "player": "Noelvi Marte (CIN)",
-      "over_0.5_H": 25.0,
+      "over_0.5_H": 37.5,
       "over_1.5_H": 0.0,
       "over_0.5_K": 87.5,
       "over_1.5_K": 12.5,
@@ -186,33 +206,53 @@
     },
     {
       "player": "Jeff McNeil (ATH)",
-      "over_0.5_H": 50.0,
-      "over_1.5_H": 10.0,
+      "over_0.5_H": 60.0,
+      "over_1.5_H": 20.0,
       "over_0.5_K": 80.0,
       "over_1.5_K": 10.0,
-      "over_1.5_HRR": 30.0,
+      "over_1.5_HRR": 40.0,
       "games_considered": 10,
       "player_id": 643446
     },
     {
       "player": "Max Muncy (ATH)",
-      "over_0.5_H": 80.0,
+      "over_0.5_H": 90.0,
       "over_1.5_H": 30.0,
       "over_0.5_K": 80.0,
       "over_1.5_K": 40.0,
-      "over_1.5_HRR": 70.0,
+      "over_1.5_HRR": 80.0,
       "games_considered": 10,
       "player_id": 691777
     },
     {
       "player": "Nick Kurtz (ATH)",
       "over_0.5_H": 50.0,
-      "over_1.5_H": 10.0,
+      "over_1.5_H": 20.0,
       "over_0.5_K": 90.0,
-      "over_1.5_K": 60.0,
-      "over_1.5_HRR": 30.0,
+      "over_1.5_K": 70.0,
+      "over_1.5_HRR": 40.0,
       "games_considered": 10,
       "player_id": 701762
+    },
+    {
+      "player": "Shea Langeliers (ATH)",
+      "over_0.5_H": 60.0,
+      "over_1.5_H": 40.0,
+      "over_0.5_K": 80.0,
+      "over_1.5_K": 50.0,
+      "over_1.5_HRR": 50.0,
+      "games_considered": 10,
+      "player_id": 669127
+    },
+    {
+      "player": "Aaron Judge (NYY)",
+      "over_0.5_H": 70.0,
+      "over_1.5_H": 30.0,
+      "over_0.5_K": 80.0,
+      "over_1.5_K": 20.0,
+      "over_1.5_HRR": 60.0,
+      "games_considered": 10,
+      "player_id": 592450
     },
     {
       "player": "Giancarlo Stanton (NYY)",
@@ -228,36 +268,46 @@
       "player": "Jazz Chisholm Jr. (NYY)",
       "over_0.5_H": 70.0,
       "over_1.5_H": 0.0,
-      "over_0.5_K": 80.0,
-      "over_1.5_K": 50.0,
+      "over_0.5_K": 90.0,
+      "over_1.5_K": 60.0,
       "over_1.5_HRR": 30.0,
       "games_considered": 10,
       "player_id": 665862
     },
     {
+      "player": "Gleyber Torres (DET)",
+      "over_0.5_H": 60.0,
+      "over_1.5_H": 20.0,
+      "over_0.5_K": 80.0,
+      "over_1.5_K": 20.0,
+      "over_1.5_HRR": 40.0,
+      "games_considered": 10,
+      "player_id": 650402
+    },
+    {
       "player": "Kerry Carpenter (DET)",
-      "over_0.5_H": 50.0,
+      "over_0.5_H": 60.0,
       "over_1.5_H": 10.0,
       "over_0.5_K": 90.0,
       "over_1.5_K": 20.0,
-      "over_1.5_HRR": 40.0,
+      "over_1.5_HRR": 50.0,
       "games_considered": 10,
       "player_id": 681481
     },
     {
       "player": "Spencer Torkelson (DET)",
-      "over_0.5_H": 60.0,
+      "over_0.5_H": 50.0,
       "over_1.5_H": 10.0,
-      "over_0.5_K": 90.0,
-      "over_1.5_K": 40.0,
-      "over_1.5_HRR": 50.0,
+      "over_0.5_K": 80.0,
+      "over_1.5_K": 30.0,
+      "over_1.5_HRR": 40.0,
       "games_considered": 10,
       "player_id": 679529
     },
     {
       "player": "Byron Buxton (MIN)",
       "over_0.5_H": 50.0,
-      "over_1.5_H": 10.0,
+      "over_1.5_H": 20.0,
       "over_0.5_K": 80.0,
       "over_1.5_K": 20.0,
       "over_1.5_HRR": 40.0,
@@ -265,14 +315,34 @@
       "player_id": 621439
     },
     {
+      "player": "Josh Bell (MIN)",
+      "over_0.5_H": 60.0,
+      "over_1.5_H": 30.0,
+      "over_0.5_K": 80.0,
+      "over_1.5_K": 20.0,
+      "over_1.5_HRR": 60.0,
+      "games_considered": 10,
+      "player_id": 605137
+    },
+    {
       "player": "Matt Wallner (MIN)",
       "over_0.5_H": 90.0,
       "over_1.5_H": 20.0,
-      "over_0.5_K": 80.0,
-      "over_1.5_K": 70.0,
+      "over_0.5_K": 90.0,
+      "over_1.5_K": 80.0,
       "over_1.5_HRR": 80.0,
       "games_considered": 10,
       "player_id": 670242
+    },
+    {
+      "player": "Ryan Jeffers (MIN)",
+      "over_0.5_H": 66.7,
+      "over_1.5_H": 11.1,
+      "over_0.5_K": 88.9,
+      "over_1.5_K": 22.2,
+      "over_1.5_HRR": 44.4,
+      "games_considered": 9,
+      "player_id": 680777
     },
     {
       "player": "Carson Benge (NYM)",
@@ -410,11 +480,21 @@
       "player": "Xavier Edwards (MIA)",
       "over_0.5_H": 80.0,
       "over_1.5_H": 70.0,
-      "over_0.5_K": 40.0,
+      "over_0.5_K": 50.0,
       "over_1.5_K": 0.0,
       "over_1.5_HRR": 80.0,
       "games_considered": 10,
       "player_id": 669364
+    },
+    {
+      "player": "Max Muncy (ATH)",
+      "over_0.5_H": 90.0,
+      "over_1.5_H": 30.0,
+      "over_0.5_K": 80.0,
+      "over_1.5_K": 40.0,
+      "over_1.5_HRR": 80.0,
+      "games_considered": 10,
+      "player_id": 691777
     },
     {
       "player": "Ben Rice (NYY)",
@@ -440,8 +520,8 @@
       "player": "Matt Wallner (MIN)",
       "over_0.5_H": 90.0,
       "over_1.5_H": 20.0,
-      "over_0.5_K": 80.0,
-      "over_1.5_K": 70.0,
+      "over_0.5_K": 90.0,
+      "over_1.5_K": 80.0,
       "over_1.5_HRR": 80.0,
       "games_considered": 10,
       "player_id": 670242
@@ -460,7 +540,7 @@
   "parlay_suggestions": [
     {
       "game": "Cincinnati Reds @ Miami Marlins",
-      "avg_leg_hit_rate": 88.3,
+      "avg_leg_hit_rate": 89.2,
       "legs": [
         {
           "player": "Otto Lopez (MIA)",
@@ -469,13 +549,13 @@
           "games_considered": 10
         },
         {
-          "player": "Noelvi Marte (CIN)",
+          "player": "Eugenio Suárez (CIN)",
           "prop": "Over 0.5 Strikeouts",
-          "hit_rate": 87.5,
-          "games_considered": 8
+          "hit_rate": 90.0,
+          "games_considered": 10
         },
         {
-          "player": "Austin Slater (MIA)",
+          "player": "Noelvi Marte (CIN)",
           "prop": "Over 0.5 Strikeouts",
           "hit_rate": 87.5,
           "games_considered": 8
@@ -484,8 +564,14 @@
     },
     {
       "game": "Athletics @ New York Yankees",
-      "avg_leg_hit_rate": 86.7,
+      "avg_leg_hit_rate": 90.0,
       "legs": [
+        {
+          "player": "Max Muncy (ATH)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 90.0,
+          "games_considered": 10
+        },
         {
           "player": "Nick Kurtz (ATH)",
           "prop": "Over 0.5 Strikeouts",
@@ -497,18 +583,12 @@
           "prop": "Over 0.5 Strikeouts",
           "hit_rate": 90.0,
           "games_considered": 10
-        },
-        {
-          "player": "Max Muncy (ATH)",
-          "prop": "Over 0.5 Hits",
-          "hit_rate": 80.0,
-          "games_considered": 10
         }
       ]
     },
     {
       "game": "Detroit Tigers @ Minnesota Twins",
-      "avg_leg_hit_rate": 90.0,
+      "avg_leg_hit_rate": 89.6,
       "legs": [
         {
           "player": "Matt Wallner (MIN)",
@@ -523,10 +603,10 @@
           "games_considered": 10
         },
         {
-          "player": "Spencer Torkelson (DET)",
+          "player": "Ryan Jeffers (MIN)",
           "prop": "Over 0.5 Strikeouts",
-          "hit_rate": 90.0,
-          "games_considered": 10
+          "hit_rate": 88.9,
+          "games_considered": 9
         }
       ]
     },
