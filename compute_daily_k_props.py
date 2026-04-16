@@ -96,7 +96,7 @@ def compute_daily_k_props():
                 continue
 
             records = []
-            for split in reversed(game_splits):
+            for split in game_splits:
                 stat = split.get("stat", {})
                 hits = int(stat.get("hits", 0))
                 runs = int(stat.get("runs", 0))
@@ -148,6 +148,9 @@ def compute_daily_k_props():
             suggestion = suggest_game_parlays(game_batter_stats, game_label)
             parlay_suggestions.append(suggestion)
 
+    # Sort parlay suggestions by average hit rate (descending)
+    parlay_suggestions.sort(key=lambda x: x.get("avg_leg_hit_rate", 0), reverse=True)
+
     # ====================== SAVE TO JSON ======================
     data = {
         "date": today_str,
@@ -197,15 +200,16 @@ def suggest_game_parlays(game_batter_stats: list, game_label: str) -> dict:
 
     selected, used = [], set()
     for c in candidates:
-        if len(selected) == 3:
+        if len(selected) == 4:          # Changed to 4 legs
             break
         if c["player"] not in used:
             selected.append(c)
             used.add(c["player"])
 
-    if len(selected) < 3:
+    # Fill remaining legs if needed
+    if len(selected) < 4:
         for c in candidates:
-            if len(selected) == 3:
+            if len(selected) == 4:
                 break
             if c not in selected:
                 selected.append(c)
