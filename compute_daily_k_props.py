@@ -104,12 +104,12 @@ def compute_daily_k_props():
                 strikeouts = int(stat.get("strikeOuts", 0))
                 combined = hits + runs + rbi
 
-                records.append({"H": hits, "K": strikeouts, "HRR": combined})
+                records.append({"Date": split.get("date", ""), "H": hits, "K": strikeouts, "HRR": combined})
 
             if not records:
                 continue
 
-            df = pd.DataFrame(records)
+            df = pd.DataFrame(records).sort_values("Date", ascending=False)
             pdata = df.head(10).copy()
             n_games = len(pdata)
 
