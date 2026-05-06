@@ -15,7 +15,6 @@ st.set_page_config(
 )
 
 # ====================== CACHED API FUNCTIONS ======================
-# (All cached functions remain the same - omitted for brevity)
 @st.cache_data(ttl=1800)
 def get_todays_games():
     today = datetime.date.today().strftime("%Y-%m-%d")
@@ -113,11 +112,85 @@ def calculate_outs(ip_str):
 # ====================== STREAMLIT APP ======================
 st.title("⚾ MLB Active Player Recent Game Stats")
 
-tab_player, tab_parlays = st.tabs(["📊 Player Stats", "🎯 Today's Parlay Suggestions"])
+# ====================== TABS ======================
+tab_parlays, tab_player = st.tabs(["🎯 Today's Parlay Suggestions", "📊 Player Stats"])
 
-# ====================== TAB 1: PLAYER STATS ======================
+# ====================== TAB 1: PARLAY SUGGESTIONS ======================
+with tab_parlays:
+    st.subheader("🎯 Today's Parlay Suggestions & H+R+RBI Hot List")
+    
+    daily_file = "daily_k_props.json"
+    if os.path.exists(daily_file):
+        try:
+            with open(daily_file, "r", encoding="utf-8") as f:
+                daily_data = json.load(f)
+            
+            date_today = datetime.date.today().strftime("%Y-%m-%d")
+            if daily_data.get("date") != date_today:
+                st.warning(f"⚠️ Data is from {daily_data.get('date', 'unknown')}. Today's date is {date_today}.")
+            
+            # ====================== H+R+RBI HOT LIST ======================
+            st.markdown("### 🔥 H+R+RBI Hot List — All Games Today")
+            hrr_list = daily_data.get("hrr_qualifiers", [])
+            
+            if hrr_list:
+                df_hrr = pd.DataFrame(hrr_list)
+                if "over_1.5_HRR" in df_hrr.columns:
+                    df_hrr = df_hrr.sort_values("over_1.5_HRR", ascending=False).reset_index(drop=True)
+                
+                display_cols = ["player", "over_1.5_HRR"]
+                extra_cols = [col for col in ["last_10_avg", "games", "recent_form"] if col in df_hrr.columns]
+                display_cols.extend(extra_cols)
+                
+                st.dataframe(
+                    df_hrr[display_cols],
+                    use_container_width=True,
+                    hide_index=True
+                )
+                
+                st.success(f"✅ **{len(df_hrr)} players** across all today's games meet the H+R+RBI hot list criteria")
+            else:
+                st.info("No H+R+RBI qualifiers found.")
+            
+            st.divider()
+            
+            # ====================== RECOMMENDED 3-LEG PARLAYS (2 per row) ======================
+            st.subheader("🎯 Recommended 3-Leg Parlays")
+            suggestions = daily_data.get("parlay_suggestions", [])
+            
+            if suggestions:
+                for i in range(0, len(suggestions), 2):
+                    cols = st.columns(2)
+                    
+                    # First suggestion
+                    with cols[0]:
+                        sug = suggestions[i]
+                        st.markdown(f"#### ⚾ {sug.get('game', 'Unknown Game')}")
+                        for j, leg in enumerate(sug.get("legs", []), 1):
+                            st.write(f"**Leg {j}:** {leg.get('player', 'N/A')} {leg.get('prop', '')} "
+                                    f"({leg.get('hit_rate', 0)}% hit rate)")
+                        st.caption("Odds would appear here if available")
+                    
+                    # Second suggestion (if exists)
+                    if i + 1 < len(suggestions):
+                        with cols[1]:
+                            sug = suggestions[i + 1]
+                            st.markdown(f"#### ⚾ {sug.get('game', 'Unknown Game')}")
+                            for j, leg in enumerate(sug.get("legs", []), 1):
+                                st.write(f"**Leg {j}:** {leg.get('player', 'N/A')} {leg.get('prop', '')} "
+                                        f"({leg.get('hit_rate', 0)}% hit rate)")
+                            st.caption("Odds would appear here if available")
+            else:
+                st.info("No parlay suggestions available in the data file yet.")
+                
+        except Exception as e:
+            st.error(f"Error loading daily data: {e}")
+    else:
+        st.warning("`daily_k_props.json` not found. Please run your compute script first.")
+
+# ====================== TAB 2: PLAYER STATS ======================
 with tab_player:
-    # ====================== SIDEBAR ======================
+    # Sidebar and Player Stats code remains unchanged (same as previous version)
     with st.sidebar:
         st.header("🎮 Game & Player Selection")
 
@@ -130,7 +203,6 @@ with tab_player:
         selected_display = st.selectbox("Select a game", options=game_options, key="game_select")
         selected_game = next((g for g in today_games if g["display"] == selected_display), None)
 
-        # Starting Pitchers
         st.subheader("⚾ Starting Pitchers")
         selected_away_pitcher_id = selected_away_pitcher_name = None
         selected_home_pitcher_id = selected_home_pitcher_name = None
@@ -159,7 +231,6 @@ with tab_player:
                 if selected_home_label in home_map:
                     selected_home_pitcher_id, selected_home_pitcher_name = home_map[selected_home_label]
 
-        # Player + Stat + Threshold
         st.divider()
         st.subheader("🎯 Player Analysis")
 
@@ -178,7 +249,6 @@ with tab_player:
         selected_label = st.selectbox("Select Player", options=["— Choose player —"] + [p["label"] for p in all_players])
         selected_player = next((p for p in all_players if p["label"] == selected_label), None)
 
-        # === STAT & THRESHOLD FILTERS (Always defined) ===
         selected_stat = None
         threshold = 1.5
 
@@ -202,10 +272,9 @@ with tab_player:
                     thresh_options = [0.5,1.5,2.5,3.5,4.5,5.5]
                 threshold = st.selectbox("Threshold", options=thresh_options, format_func=lambda x: f"{x:.1f}", key="threshold_select")
 
-    # ====================== MAIN CONTENT ======================
+    # Main Player Stats Content (unchanged)
     if selected_game:
         st.subheader("🔥 Today's Prop Hot Lists (≥80% Hit Rate - Last 10 Games)")
-        # (Hot Lists code remains the same as previous version)
         daily_file = "daily_k_props.json"
         if os.path.exists(daily_file):
             try:
@@ -249,15 +318,14 @@ with tab_player:
 
         st.divider()
 
-    # ====================== PLAYER ANALYSIS ======================
     if selected_player and selected_stat is not None and selected_game:
+        # ... (Player analysis code remains the same as in previous version)
         player_id = selected_player["id"]
         is_pitcher = selected_player["posCode"] == "1"
         group = "pitching" if is_pitcher else "hitting"
         game_splits = get_game_log(player_id, group)
 
         if game_splits:
-            # (Data processing code - same as before)
             records = []
             for split in game_splits:
                 stat = split.get("stat", {})
@@ -331,20 +399,3 @@ with tab_player:
             st.info("No game logs found for this player this season.")
     elif selected_game:
         st.info("👈 Select a **player**, **stat**, and **threshold** from the sidebar.")
-
-# Tab 2 unchanged...
-with tab_parlays:
-    st.subheader("🎯 Today's 3-Leg Parlay Suggestions")
-    daily_file = "daily_k_props.json"
-    if os.path.exists(daily_file):
-        try:
-            with open(daily_file, "r", encoding="utf-8") as f:
-                daily_data = json.load(f)
-            suggestions = daily_data.get("parlay_suggestions", [])
-            for sug in suggestions:
-                st.markdown(f"#### ⚾ {sug.get('game', 'Unknown')}")
-                for i, leg in enumerate(sug.get("legs", []), 1):
-                    st.write(f"Leg {i}: {leg['player']} {leg['prop']} ({leg['hit_rate']}%)")
-                st.divider()
-        except:
-            st.info("Run compute script to see suggestions.")
