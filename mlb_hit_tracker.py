@@ -5,6 +5,7 @@ import datetime
 import plotly.express as px
 import json
 import os
+import re
 
 # ====================== FAVICON & PAGE CONFIG ======================
 st.set_page_config(
@@ -137,7 +138,24 @@ with tab_parlays:
                 df_hrr = pd.DataFrame(hrr_list)
                 if "over_1.5_HRR" in df_hrr.columns:
                     df_hrr = df_hrr.sort_values("over_1.5_HRR", ascending=False).reset_index(drop=True)
-                
+
+                # Build position lookup from all rosters playing today
+                today_games = get_todays_games()
+                position_map = {}
+                for g in today_games:
+                    for roster in [get_team_active_roster(g["awayId"]), get_team_active_roster(g["homeId"])]:
+                        for p in roster:
+                            position_map[p["fullName"].strip().lower()] = p.get("position", "?")
+
+                def add_position_to_player(player_str):
+                    name = re.sub(r'\s*\([^)]+\)', '', str(player_str)).strip()
+                    pos = position_map.get(name.lower(), "?")
+                    team_match = re.search(r'\(([^)]+)\)', str(player_str))
+                    team = f"({team_match.group(1)})" if team_match else ""
+                    return f"{name} {team}({pos})"
+
+                df_hrr["player"] = df_hrr["player"].apply(add_position_to_player)
+
                 display_cols = ["player", "over_1.5_HRR"]
                 extra_cols = [col for col in ["last_10_avg", "games", "recent_form"] if col in df_hrr.columns]
                 display_cols.extend(extra_cols)
