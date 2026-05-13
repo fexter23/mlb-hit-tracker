@@ -126,7 +126,6 @@ def get_game_log(player_id: int, group: str):
 
 @st.cache_data(ttl=3600)
 def get_batter_vs_pitcher(batter_id: int, pitcher_id: int, season: int):
-    """Current season BvP"""
     if not pitcher_id:
         return None
     url = f"https://statsapi.mlb.com/api/v1/people/{batter_id}/stats?stats=vsPlayer&group=hitting&opposingPlayerId={pitcher_id}&season={season}"
@@ -156,7 +155,6 @@ def get_batter_vs_pitcher(batter_id: int, pitcher_id: int, season: int):
 
 @st.cache_data(ttl=3600)
 def get_batter_vs_pitcher_career(batter_id: int, pitcher_id: int):
-    """Career BvP (no season filter)"""
     if not pitcher_id:
         return None
     url = f"https://statsapi.mlb.com/api/v1/people/{batter_id}/stats?stats=vsPlayer&group=hitting&opposingPlayerId={pitcher_id}"
@@ -186,7 +184,6 @@ def get_batter_vs_pitcher_career(batter_id: int, pitcher_id: int):
 
 @st.cache_data(ttl=3600)
 def get_batter_platoon_splits(player_id: int):
-    """Season hitting splits vs LHP and RHP."""
     year = datetime.datetime.now().year
     url = f"https://statsapi.mlb.com/api/v1/people/{player_id}/stats?stats=statSplits&group=hitting&season={year}&sitCodes=vl,vr"
     try:
@@ -208,14 +205,13 @@ def get_batter_platoon_splits(player_id: int):
                     "obp":       st_data.get("obp", ".000"),
                     "slg":       st_data.get("slg", ".000"),
                 }
-        return result  # keys: "vl" and/or "vr"
+        return result
     except Exception:
         return {}
 
 
 @st.cache_data(ttl=3600)
 def get_pitcher_hand(pitcher_id: int) -> str:
-    """Returns 'L', 'R', or '' for the pitcher's throwing hand."""
     if not pitcher_id:
         return ""
     try:
@@ -232,7 +228,6 @@ def get_pitcher_hand(pitcher_id: int) -> str:
 
 @st.cache_data(ttl=3600)
 def get_pitcher_recent_form(pitcher_id: int, num_starts: int = 4):
-    """Last N game log entries for a pitcher — IP, H, ER, K, BB."""
     if not pitcher_id:
         return []
     year = datetime.datetime.now().year
@@ -274,28 +269,17 @@ def calculate_outs(ip_str):
 # ====================== ANALYTICS HELPERS ======================
 
 def compute_weighted_hit_rate(pdata: pd.DataFrame, stat_col: str, threshold: float) -> float:
-    """
-    Exponential decay weighting: most recent game = highest weight.
-    Half-life ~7 days — a game 3 weeks ago counts ~25% as much as today's.
-    """
     n = len(pdata)
     if n == 0:
         return 0.0
-    decay = 0.1  # controls how fast older games fade
-    weights = [1.0 / (1.0 + decay * i) for i in range(n)]  # index 0 = most recent
+    decay = 0.1
+    weights = [1.0 / (1.0 + decay * i) for i in range(n)]
     total_weight = sum(weights)
     hits = sum(w for i, w in enumerate(weights) if pdata.iloc[i][stat_col] > threshold)
     return (hits / total_weight) * 100
 
 
 def detect_streak_slump(pdata: pd.DataFrame, stat_col: str, threshold: float):
-    """
-    Look at the 3 most recent games.
-    Streak  = all 3 over threshold
-    Slump   = all 3 under threshold
-    Otherwise neutral.
-    Returns (label, emoji, color)
-    """
     recent = pdata.head(3)[stat_col].tolist()
     if len(recent) < 3:
         return "Neutral", "➖", "#aaaaaa"
@@ -318,31 +302,22 @@ def compute_confidence_score(
     platoon_split: dict | None = None,
     pitcher_hand: str = "",
 ) -> tuple[float, dict]:
-    """
-    Combines multiple signals into a 0-100 confidence score.
-    Returns (score, breakdown_dict) so we can show the components.
-    """
     scores = {}
 
-    # 1. Raw hit rate (last 10) — 20 pts max
     scores["Hit Rate (raw)"] = round(hit_rate * 0.20, 1)
-
-    # 2. Weighted hit rate — 20 pts max
     scores["Hit Rate (weighted)"] = round(weighted_hit_rate * 0.20, 1)
 
-    # 3. Park factor — 15 pts max (neutral=100 → 7.5 pts; scales ±7.5)
-    pf_norm = min(max((park_factor - 85) / 50, 0), 1)  # 85-135 → 0-1
+    pf_norm = min(max((park_factor - 85) / 50, 0), 1)
     scores["Park Factor"] = round(pf_norm * 15, 1)
 
-    # 4. Opponent ERA — 15 pts max (higher ERA = better for batter)
     try:
         era_val = float(opp_era)
-        era_norm = min(max((era_val - 2.0) / 5.0, 0), 1)  # 2.0-7.0 ERA → 0-1
+        era_norm = min(max((era_val - 2.0) / 5.0, 0), 1)
         scores["Opp. ERA"] = round(era_norm * 15, 1)
     except (ValueError, TypeError):
-        scores["Opp. ERA"] = 7.5  # neutral if unknown
+        scores["Opp. ERA"] = 7.5
 
-    # 5. BvP bonus — 10 pts max
+    # BvP
     bvp_score = 0.0
     if bvp_season and bvp_season.get("atBats", 0) >= 2:
         try:
@@ -350,7 +325,7 @@ def compute_confidence_score(
             ab = bvp_season["atBats"]
             sample_weight = min(ab / 10, 1.0)
             bvp_score = max(bvp_score, avg * 10 / 0.400 * sample_weight)
-        except (ValueError, TypeError):
+        except:
             pass
     if bvp_career and bvp_career.get("atBats", 0) >= 3:
         try:
@@ -358,25 +333,23 @@ def compute_confidence_score(
             ab = bvp_career["atBats"]
             sample_weight = min(ab / 15, 1.0) * 0.8
             bvp_score = max(bvp_score, avg * 10 / 0.400 * sample_weight)
-        except (ValueError, TypeError):
+        except:
             pass
     scores["BvP History"] = round(min(bvp_score, 10), 1)
 
-    # 6. Streak/slump bonus — 10 pts max
     streak_bonus = 10.0 if "Streak" in streak_label else (0.0 if "Slump" in streak_label else 5.0)
     scores["Streak/Slump"] = streak_bonus
 
-    # 7. Platoon split — 10 pts max
-    platoon_score = 5.0  # neutral default
+    # Platoon
+    platoon_score = 5.0
     if platoon_split and pitcher_hand in ("L", "R"):
         code = "vl" if pitcher_hand == "L" else "vr"
         split_data = platoon_split.get(code)
         if split_data and split_data.get("atBats", 0) >= 5:
             try:
                 ops = float(split_data["ops"])
-                # .600 OPS = poor (0 pts), .900 = neutral (5 pts), 1.100+ = elite (10 pts)
                 platoon_score = min(max((ops - 0.600) / 0.500 * 10, 0), 10)
-            except (ValueError, TypeError):
+            except:
                 pass
     scores["Platoon Split"] = round(platoon_score, 1)
 
@@ -524,7 +497,6 @@ with tab_player:
                 col1, col2, col3 = st.columns(3)
                 search_pattern = f"{selected_game['awayAbbrev']}|{selected_game['homeAbbrev']}"
 
-                # Hits Hot List
                 with col1:
                     st.markdown("**Hits Hot List**")
                     hits_list = daily_data.get("hits_qualifiers", [])
@@ -537,10 +509,7 @@ with tab_player:
                             st.dataframe(df_game[available_cols].head(10), use_container_width=True, hide_index=True)
                         else:
                             st.info("No hot hitters in this game.")
-                    else:
-                        st.info("No Hits hot list data.")
 
-                # Strikeouts Hot List
                 with col2:
                     st.markdown("**Strikeouts Hot List**")
                     k_list = (daily_data.get("k_qualifiers", []) or 
@@ -555,10 +524,7 @@ with tab_player:
                             st.dataframe(df_game[k_cols].head(12), use_container_width=True, hide_index=True)
                         else:
                             st.info("No high strikeout props in this game.")
-                    else:
-                        st.info("No Strikeouts hot list data.")
 
-                # H + R + RBI Hot List
                 with col3:
                     st.markdown("**H + R + RBI Hot List**")
                     hrr_list = daily_data.get("hrr_qualifiers", [])
@@ -569,13 +535,9 @@ with tab_player:
                             st.dataframe(df_game[["player", "over_1.5_HRR"]].head(10), use_container_width=True, hide_index=True)
                         else:
                             st.info("No hot H+R+RBI in this game.")
-                    else:
-                        st.info("No H+R+RBI hot list data.")
 
             except Exception as e:
                 st.error(f"Error loading hot lists: {e}")
-        else:
-            st.warning("`daily_k_props.json` not found.")
 
         st.divider()
 
@@ -613,7 +575,6 @@ with tab_player:
                 weighted_hr = compute_weighted_hit_rate(pdata, stat_col, threshold)
                 streak_label, streak_emoji, streak_color = detect_streak_slump(pdata, stat_col, threshold)
 
-                # BvP + platoon data needed for confidence score
                 bvp_season, bvp_career = None, None
                 platoon_splits, pitcher_hand = {}, ""
                 if not is_pitcher and opp_pid:
@@ -628,7 +589,7 @@ with tab_player:
                     streak_label, platoon_splits, pitcher_hand
                 )
 
-                # ---- confidence + streak banner ----
+                # Confidence + Streak Banner
                 conf_color = "#00ff88" if confidence >= 70 else "#ffcc00" if confidence >= 50 else "#ff5555"
                 conf_label = "High" if confidence >= 70 else "Medium" if confidence >= 50 else "Low"
                 st.markdown(
@@ -650,7 +611,6 @@ with tab_player:
                 c1, c2 = st.columns([3, 2])
                 with c1:
                     st.subheader(f"🎯 {hit_rate:.0f}% Over {threshold} (Last 10 Games)")
-                    # Chart sorted newest → oldest (left → right)
                     chart_data = pdata.sort_values("Date", ascending=False)
                     bar_colors = ["#00ff88" if v > threshold else "#ff5555" for v in chart_data[stat_col]]
                     fig = px.bar(chart_data, x="Date", y=stat_col, text_auto=True, height=380,
@@ -660,15 +620,13 @@ with tab_player:
                                   annotation_text=f"Line {threshold}", annotation_position="top right")
                     st.plotly_chart(fig, use_container_width=True)
 
-                    # Raw vs weighted hit rate comparison
                     hr_col1, hr_col2 = st.columns(2)
                     with hr_col1:
                         st.metric("Raw Hit Rate (last 10)", f"{hit_rate:.0f}%")
                     with hr_col2:
                         delta = round(weighted_hr - hit_rate, 1)
                         st.metric("Weighted Hit Rate", f"{weighted_hr:.0f}%",
-                                  delta=f"{delta:+.1f}%",
-                                  help="Exponential decay weighting — recent games count more. Positive delta means recent form is better than the 10-game average.")
+                                  delta=f"{delta:+.1f}%")
 
                 with c2:
                     st.write("#### Matchup Quality")
@@ -692,7 +650,6 @@ with tab_player:
                             else:
                                 st.metric("Career AVG", "—")
 
-                        # ---- Platoon Splits ----
                         if platoon_splits:
                             hand_label = {"L": "LHP", "R": "RHP"}.get(pitcher_hand, "")
                             st.caption(f"**Platoon Splits** {'— facing ' + hand_label if hand_label else ''}")
@@ -701,10 +658,7 @@ with tab_player:
                                 with col:
                                     d = platoon_splits.get(code)
                                     if d and d["atBats"] > 0:
-                                        highlight = (
-                                            (pitcher_hand == "R" and code == "vr") or
-                                            (pitcher_hand == "L" and code == "vl")
-                                        )
+                                        highlight = (pitcher_hand == "R" and code == "vr") or (pitcher_hand == "L" and code == "vl")
                                         border = "border:1px solid #00ff88;" if highlight else ""
                                         st.markdown(
                                             f"<div style='background:#1e1e2e;border-radius:8px;padding:6px 8px;{border}'>"
@@ -714,42 +668,41 @@ with tab_player:
                                             f"</div>",
                                             unsafe_allow_html=True
                                         )
-                                    else:
-                                        st.markdown(
-                                            f"<div style='background:#1e1e2e;border-radius:8px;padding:6px 8px;'>"
-                                            f"<div style='font-size:10px;color:#aaa'>{label}</div>"
-                                            f"<div style='font-size:15px;color:#555'>—</div>"
-                                            f"</div>",
-                                            unsafe_allow_html=True
-                                        )
 
-                    # ---- Pitcher Recent Form ----
+                    # ==== FIXED PITCHER RECENT FORM ====
                     if opp_pid:
                         pitcher_form = get_pitcher_recent_form(opp_pid, num_starts=4)
                         if pitcher_form:
                             st.caption(f"**{opp_starter} — Last {len(pitcher_form)} Starts**")
                             form_df = pd.DataFrame(pitcher_form)
-                            # colour ER column: 0-1 green, 2-3 yellow, 4+ red
+                            
                             def er_color(val):
-                                if val <= 1: return "color:#00ff88"
-                                if val <= 3: return "color:#ffcc00"
-                                return "color:#ff5555"
-                            styled = form_df.style.applymap(
-                                lambda v: er_color(v), subset=["ER"]
-                            ).format(precision=0)
-                            st.dataframe(form_df, use_container_width=True, hide_index=True)
+                                if pd.isna(val):
+                                    return ""
+                                try:
+                                    v = float(val)
+                                    if v <= 1: return "color:#00ff88"
+                                    if v <= 3: return "color:#ffcc00"
+                                    return "color:#ff5555"
+                                except:
+                                    return ""
+                            
+                            styled = (form_df.style
+                                .map(lambda v: er_color(v), subset=["ER"])
+                                .format(precision=0)
+                            )
+                            
+                            st.dataframe(styled, use_container_width=True, hide_index=True)
 
-                            # Quick ERA trend indicator
                             if len(pitcher_form) >= 2:
                                 recent_er = sum(r["ER"] for r in pitcher_form[:2])
-                                older_er  = sum(r["ER"] for r in pitcher_form[2:]) / max(len(pitcher_form) - 2, 1)
+                                older_er = sum(r["ER"] for r in pitcher_form[2:]) / max(len(pitcher_form) - 2, 1)
                                 avg_recent = recent_er / 2
                                 if avg_recent < older_er - 0.5:
                                     st.success("📉 Pitcher trending better recently")
                                 elif avg_recent > older_er + 0.5:
                                     st.warning("📈 Pitcher trending worse recently")
 
-                    # Confidence score breakdown
                     with st.expander("📊 Confidence Breakdown"):
                         max_pts_map = {
                             "Hit Rate (raw)": 20, "Hit Rate (weighted)": 20,
