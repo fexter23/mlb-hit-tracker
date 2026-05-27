@@ -1087,4 +1087,3 @@ with tab_player:
             st.info("No game logs found for this season.")
     elif selected_game:
         st.info("👈 Select a player from the sidebar to view detailed analytics.")
-}
