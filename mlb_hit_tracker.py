@@ -26,6 +26,27 @@ st.set_page_config(
 )
 
 # ====================== CACHED API FUNCTIONS ======================
+@st.cache_data(ttl=3600)
+def get_pitcher_era(pitcher_id: int) -> str:
+    if not pitcher_id:
+        return "?.??"
+    try:
+        year = datetime.datetime.now().year
+        stats_url = f"https://statsapi.mlb.com/api/v1/people/{pitcher_id}/stats?stats=season&group=pitching&season={year}"
+        s_resp = requests.get(stats_url, timeout=8)
+        s_resp.raise_for_status()
+        stats_data = s_resp.json()
+        for stat_group in stats_data.get("stats", []):
+            if stat_group.get("group", {}).get("displayName") == "pitching":
+                for split in stat_group.get("splits", []):
+                    era = split.get("stat", {}).get("era")
+                    if era is not None:
+                        return str(era)
+        return "?.??"
+    except Exception:
+        return "?.??"
+
+
 @st.cache_data(ttl=1800)
 def get_todays_games():
     today = datetime.date.today().strftime("%Y-%m-%d")
@@ -36,26 +57,6 @@ def get_todays_games():
         resp.raise_for_status()
         data = resp.json()
         games = []
-
-        @st.cache_data(ttl=3600)
-        def get_pitcher_era(pitcher_id: int) -> str:
-            if not pitcher_id:
-                return "?.??"
-            try:
-                year = datetime.datetime.now().year
-                stats_url = f"https://statsapi.mlb.com/api/v1/people/{pitcher_id}/stats?stats=season&group=pitching&season={year}"
-                s_resp = requests.get(stats_url, timeout=8)
-                s_resp.raise_for_status()
-                stats_data = s_resp.json()
-                for stat_group in stats_data.get("stats", []):
-                    if stat_group.get("group", {}).get("displayName") == "pitching":
-                        for split in stat_group.get("splits", []):
-                            era = split.get("stat", {}).get("era")
-                            if era is not None:
-                                return str(era)
-                return "?.??"
-            except Exception:
-                return "?.??"
 
         for date in data.get("dates", []):
             for game in date.get("games", []):
@@ -266,6 +267,157 @@ def calculate_outs(ip_str):
         return 0
 
 
+# ====================== LIVE PROP SCORING ======================
+
+def score_batter_props(player_id: int, player_name: str, team_abbrev: str,
+                       opp_era: str, park_factor: int) -> dict | None:
+    """Score a batter's H, H+R+RBI props over last 10 games."""
+    logs = get_game_log(player_id, "hitting")
+    if not logs or len(logs) < 5:
+        return None
+    records = []
+    for s in logs:
+        stt = s.get("stat", {})
+        h = int(stt.get("hits", 0))
+        r = int(stt.get("runs", 0))
+        rbi = int(stt.get("rbi", 0))
+        records.append({"H": h, "R": r, "RBI": rbi, "HRR": h + r + rbi})
+    df = pd.DataFrame(records).head(10)
+
+    h_rate    = (df["H"]   > 0.5).mean() * 100
+    h15_rate  = (df["H"]   > 1.5).mean() * 100
+    hrr_rate  = (df["HRR"] > 1.5).mean() * 100
+
+    return {
+        "player": f"{player_name} ({team_abbrev})",
+        "over_0.5_H":   round(h_rate, 1),
+        "over_1.5_H":   round(h15_rate, 1),
+        "over_1.5_HRR": round(hrr_rate, 1),
+        "games":        len(df),
+    }
+
+
+def score_pitcher_k_props(pitcher_id: int, pitcher_name: str, team_abbrev: str) -> dict | None:
+    """Score a pitcher's strikeout props over last 5 starts."""
+    if not pitcher_id:
+        return None
+    logs = get_game_log(pitcher_id, "pitching")
+    if not logs or len(logs) < 3:
+        return None
+
+    records = []
+    for s in sorted(logs, key=lambda x: x.get("date", ""), reverse=True)[:5]:
+        stt = s.get("stat", {})
+        ip_str = stt.get("inningsPitched", "0.0")
+        outs = calculate_outs(ip_str)
+        ks = int(stt.get("strikeOuts", 0))
+        records.append({"K": ks, "outs": outs, "ip_str": ip_str})
+
+    df = pd.DataFrame(records)
+    total_outs = df["outs"].sum()
+    total_ks   = df["K"].sum()
+    k9 = round((total_ks / total_outs * 27) if total_outs > 0 else 0, 2)
+
+    k35_rate = (df["K"] > 3.5).mean() * 100
+    k45_rate = (df["K"] > 4.5).mean() * 100
+    k55_rate = (df["K"] > 5.5).mean() * 100
+    avg_k    = round(df["K"].mean(), 1)
+
+    return {
+        "pitcher": f"{pitcher_name} ({team_abbrev})",
+        "K/9":          k9,
+        "avg_K":        avg_k,
+        "over_3.5_K":   round(k35_rate, 1),
+        "over_4.5_K":   round(k45_rate, 1),
+        "over_5.5_K":   round(k55_rate, 1),
+        "starts":       len(df),
+    }
+
+
+def generate_live_props(games: list, progress_bar=None) -> dict:
+    """
+    Fetch and score all batters + starting pitchers for today's games.
+    Returns dict with keys: hits_qualifiers, hrr_qualifiers, k_qualifiers, parlay_suggestions.
+    """
+    hits_results = []
+    hrr_results  = []
+    k_results    = []
+    total_steps  = len(games) * 2  # away + home roster per game, plus pitchers
+    step = 0
+
+    for game in games:
+        for side in ("away", "home"):
+            team_id    = game["awayId"]    if side == "away" else game["homeId"]
+            team_abbrev= game["awayAbbrev"]if side == "away" else game["homeAbbrev"]
+            opp_era    = game["homePERA"]  if side == "away" else game["awayPERA"]
+            pf         = PARK_FACTORS.get(game["homeAbbrev"], 100)
+
+            roster = get_team_active_roster(team_id)
+            for player in roster:
+                if player["posCode"] == "1":   # pitchers handled separately
+                    continue
+                result = score_batter_props(
+                    player["id"], player["fullName"], team_abbrev, opp_era, pf
+                )
+                if result:
+                    hits_results.append(result)
+                    hrr_results.append(result)
+
+            step += 1
+            if progress_bar:
+                progress_bar.progress(min(step / total_steps, 0.9))
+
+        # Score both probable starters
+        for pid, pname, tabbrev in [
+            (game["awayPID"], game["awayP"], game["awayAbbrev"]),
+            (game["homePID"], game["homeP"], game["homeAbbrev"]),
+        ]:
+            if pid:
+                result = score_pitcher_k_props(pid, pname, tabbrev)
+                if result:
+                    k_results.append(result)
+
+    # Sort & filter
+    hits_q = sorted(
+        [r for r in hits_results if r["over_0.5_H"] >= 60],
+        key=lambda x: x["over_0.5_H"], reverse=True
+    )
+    hrr_q = sorted(
+        [r for r in hrr_results if r["over_1.5_HRR"] >= 60],
+        key=lambda x: x["over_1.5_HRR"], reverse=True
+    )
+    k_q = sorted(k_results, key=lambda x: x["over_4.5_K"], reverse=True)
+
+    # Build simple 3-leg parlay suggestions from top hits + hrr + k prop
+    parlay_suggestions = []
+    top_hits = [r for r in hits_q if r["over_0.5_H"] >= 70][:6]
+    top_k    = [r for r in k_q    if r["over_4.5_K"] >= 60][:4]
+
+    for i in range(0, min(len(top_hits), 6), 3):
+        legs_pool = top_hits[i:i+3]
+        if len(legs_pool) < 2:
+            break
+        legs = [{"player": r["player"], "prop": "Over 0.5 Hits", "hit_rate": r["over_0.5_H"]} for r in legs_pool]
+        if top_k:
+            k_leg = top_k[i // 3] if (i // 3) < len(top_k) else top_k[0]
+            legs[-1] = {"player": k_leg["pitcher"], "prop": "Over 4.5 Ks", "hit_rate": k_leg["over_4.5_K"]}
+        parlay_suggestions.append({
+            "game": "Today's Games",
+            "legs": legs,
+        })
+
+    if progress_bar:
+        progress_bar.progress(1.0)
+
+    return {
+        "date": datetime.date.today().strftime("%Y-%m-%d"),
+        "hits_qualifiers": hits_q,
+        "hrr_qualifiers":  hrr_q,
+        "k_qualifiers":    k_q,
+        "parlay_suggestions": parlay_suggestions,
+    }
+
+
 # ====================== ANALYTICS HELPERS ======================
 
 def compute_weighted_hit_rate(pdata: pd.DataFrame, stat_col: str, threshold: float) -> float:
@@ -364,61 +516,178 @@ tab_parlays, tab_player = st.tabs(["🎯 Today's Parlay Suggestions", "📊 Play
 
 # ====================== TAB 1: PARLAY SUGGESTIONS ======================
 with tab_parlays:
-    st.subheader("🎯 Today's Parlay Suggestions & H+R+RBI Hot List")
-    daily_file = "daily_k_props.json"
-    if os.path.exists(daily_file):
-        try:
-            with open(daily_file, "r", encoding="utf-8") as f:
-                daily_data = json.load(f)
-            
-            date_today = datetime.date.today().strftime("%Y-%m-%d")
-            if daily_data.get("date") != date_today:
-                st.warning(f"⚠️ Data is from {daily_data.get('date', 'unknown')}. Today's date is {date_today}.")
-            
-            st.markdown("### 🔥 H+R+RBI Hot List — All Games Today")
+    st.subheader("🎯 Today's Parlay Suggestions & Prop Hot Lists")
+
+    # ---- Session state for generated data ----
+    if "live_props" not in st.session_state:
+        st.session_state.live_props = None
+    if "props_date" not in st.session_state:
+        st.session_state.props_date = None
+
+    date_today = datetime.date.today().strftime("%Y-%m-%d")
+    data_is_stale = st.session_state.props_date != date_today
+
+    col_gen1, col_gen2 = st.columns([3, 1])
+    with col_gen1:
+        if st.session_state.live_props is None:
+            st.info("📡 Click **Generate** to fetch live stats for all of today's games and score props automatically.")
+        elif data_is_stale:
+            st.warning("⚠️ Data was generated on a previous date. Click **Regenerate** to refresh.")
+        else:
+            gen_time = st.session_state.get("props_generated_at", "")
+            st.success(f"✅ Live data loaded — generated at {gen_time}")
+    with col_gen2:
+        btn_label = "🔄 Regenerate" if st.session_state.live_props else "⚡ Generate"
+        if st.button(btn_label, use_container_width=True):
+            today_games_for_gen = get_todays_games()
+            if not today_games_for_gen:
+                st.error("No games found for today.")
+            else:
+                prog = st.progress(0, text="Fetching rosters & game logs…")
+                with st.spinner("Scoring props across all games — this takes ~30 seconds…"):
+                    result = generate_live_props(today_games_for_gen, progress_bar=prog)
+                prog.empty()
+                st.session_state.live_props = result
+                st.session_state.props_date = date_today
+                st.session_state.props_generated_at = datetime.datetime.now().strftime("%H:%M")
+                st.rerun()
+
+    # ---- Render data if available ----
+    daily_data = st.session_state.live_props
+
+    # Fall back to legacy JSON file if it exists and no live data yet
+    if daily_data is None:
+        daily_file = "daily_k_props.json"
+        if os.path.exists(daily_file):
+            try:
+                with open(daily_file, "r", encoding="utf-8") as f:
+                    daily_data = json.load(f)
+                if daily_data.get("date") != date_today:
+                    st.caption(f"ℹ️ Showing cached file from {daily_data.get('date', '?')}. Generate live data above for today.")
+                else:
+                    st.caption("ℹ️ Showing data from `daily_k_props.json`. Hit Generate for live data.")
+            except Exception:
+                daily_data = None
+
+    if daily_data:
+        prop_tab_hits, prop_tab_hrr, prop_tab_k, prop_tab_parlay = st.tabs(
+            ["🟢 Hits Hot List", "🔥 H+R+RBI Hot List", "⚡ Pitcher K Props", "🎯 Parlay Suggestions"]
+        )
+
+        # ---- Hits Hot List ----
+        with prop_tab_hits:
+            hits_list = daily_data.get("hits_qualifiers", [])
+            if hits_list:
+                df_h = pd.DataFrame(hits_list)
+                avail = [c for c in ["player", "over_0.5_H", "over_1.5_H", "games"] if c in df_h.columns]
+                st.dataframe(
+                    df_h[avail].sort_values("over_0.5_H", ascending=False).reset_index(drop=True),
+                    use_container_width=True, hide_index=True
+                )
+                st.success(f"✅ **{len(df_h)} batters** with ≥60% hit rate on Over 0.5 H")
+            else:
+                st.info("No hits data available. Click Generate above.")
+
+        # ---- H+R+RBI Hot List ----
+        with prop_tab_hrr:
             hrr_list = daily_data.get("hrr_qualifiers", [])
             if hrr_list:
                 df_hrr = pd.DataFrame(hrr_list)
-                if "over_1.5_HRR" in df_hrr.columns:
-                    df_hrr = df_hrr.sort_values("over_1.5_HRR", ascending=False).reset_index(drop=True)
+                avail = [c for c in ["player", "over_1.5_HRR", "over_0.5_H", "games"] if c in df_hrr.columns]
+                st.dataframe(
+                    df_hrr[avail].sort_values("over_1.5_HRR", ascending=False).reset_index(drop=True),
+                    use_container_width=True, hide_index=True
+                )
+                st.success(f"✅ **{len(df_hrr)} batters** with ≥60% hit rate on Over 1.5 H+R+RBI")
+            else:
+                st.info("No H+R+RBI data available. Click Generate above.")
 
-                today_games = get_todays_games()
-                position_map = {}
-                for g in today_games:
-                    for roster in [get_team_active_roster(g["awayId"]), get_team_active_roster(g["homeId"])]:
-                        for p in roster:
-                            position_map[p["fullName"].strip().lower()] = p.get("position", "?")
+        # ---- Pitcher K Props ----
+        with prop_tab_k:
+            st.markdown("#### ⚡ Starting Pitcher Strikeout Props — Last 5 Starts")
+            st.caption("Hit rates based on historical game logs. Always verify vs. sportsbook lines.")
+            k_list = daily_data.get("k_qualifiers", [])
+            if k_list:
+                df_k = pd.DataFrame(k_list)
 
-                def add_position_to_player(player_str):
-                    name = re.sub(r'\s*\([^)]+\)', '', str(player_str)).strip()
-                    pos = position_map.get(name.lower(), "?")
-                    team_match = re.search(r'\(([^)]+)\)', str(player_str))
-                    team = f"({team_match.group(1)})" if team_match else ""
-                    return f"{name} {team}({pos})"
+                # Color-code K/9
+                def k9_color(val):
+                    try:
+                        v = float(val)
+                        if v >= 10: return "color:#00ff88"
+                        if v >= 8:  return "color:#ffcc00"
+                        return "color:#ff5555"
+                    except:
+                        return ""
 
-                df_hrr["player"] = df_hrr["player"].apply(add_position_to_player)
-                st.dataframe(df_hrr[["player", "over_1.5_HRR"] + [c for c in ["last_10_avg", "recent_form"] if c in df_hrr.columns]], 
-                           use_container_width=True, hide_index=True)
-                st.success(f"✅ **{len(df_hrr)} players** meet the H+R+RBI criteria")
-            
-            st.divider()
-            st.subheader("🎯 Recommended 3-Leg Parlays")
+                def rate_color(val):
+                    try:
+                        v = float(val)
+                        if v >= 70: return "color:#00ff88"
+                        if v >= 50: return "color:#ffcc00"
+                        return "color:#aaaaaa"
+                    except:
+                        return ""
+
+                avail = [c for c in ["pitcher", "K/9", "avg_K", "over_3.5_K", "over_4.5_K", "over_5.5_K", "starts"] if c in df_k.columns]
+                styled_k = df_k[avail].style \
+                    .map(k9_color,   subset=["K/9"]       if "K/9"       in avail else []) \
+                    .map(rate_color, subset=["over_3.5_K"] if "over_3.5_K" in avail else []) \
+                    .map(rate_color, subset=["over_4.5_K"] if "over_4.5_K" in avail else []) \
+                    .map(rate_color, subset=["over_5.5_K"] if "over_5.5_K" in avail else []) \
+                    .format(precision=1)
+
+                st.dataframe(styled_k, use_container_width=True, hide_index=True)
+
+                # Highlight top K plays
+                top_k_plays = df_k[df_k["over_4.5_K"] >= 60].sort_values("over_4.5_K", ascending=False) if "over_4.5_K" in df_k.columns else pd.DataFrame()
+                if not top_k_plays.empty:
+                    st.markdown("**🎯 Top K Plays (≥60% on Over 4.5 K):**")
+                    for _, row in top_k_plays.head(5).iterrows():
+                        k9_val = row.get("K/9", "?")
+                        avg_val = row.get("avg_K", "?")
+                        rate_val = row.get("over_4.5_K", "?")
+                        st.markdown(
+                            f"<div style='background:#1e1e2e;border:1px solid #00ff88;border-radius:8px;"
+                            f"padding:8px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center'>"
+                            f"<span style='font-weight:700'>{row['pitcher']}</span>"
+                            f"<span style='color:#aaa;font-size:12px'>K/9: <b style='color:#fff'>{k9_val}</b> &nbsp;|&nbsp; "
+                            f"Avg K: <b style='color:#fff'>{avg_val}</b> &nbsp;|&nbsp; "
+                            f"Over 4.5: <b style='color:#00ff88'>{rate_val}%</b></span>"
+                            f"</div>",
+                            unsafe_allow_html=True
+                        )
+            else:
+                st.info("No pitcher K data available. Click Generate above.")
+
+        # ---- Parlay Suggestions ----
+        with prop_tab_parlay:
             suggestions = daily_data.get("parlay_suggestions", [])
             if suggestions:
+                st.markdown("#### 🎯 Suggested 3-Leg Parlays")
+                st.caption("Built from top hit-rate batters + best K props. Always verify lines.")
                 for i in range(0, len(suggestions), 2):
                     cols = st.columns(2)
                     for idx, col in enumerate(cols):
                         if i + idx < len(suggestions):
                             sug = suggestions[i + idx]
                             with col:
-                                st.markdown(f"#### ⚾ {sug.get('game', 'Unknown Game')}")
+                                st.markdown(
+                                    f"<div style='background:#1e1e2e;border:1px solid #444;border-radius:10px;padding:12px 16px;margin-bottom:10px'>",
+                                    unsafe_allow_html=True
+                                )
+                                st.markdown(f"**⚾ {sug.get('game', 'Today')}**")
                                 for j, leg in enumerate(sug.get("legs", []), 1):
-                                    st.write(f"**Leg {j}:** {leg.get('player', 'N/A')} {leg.get('prop', '')} ({leg.get('hit_rate', 0)}%)")
-                                st.caption("Odds shown in sportsbook")
-        except Exception as e:
-            st.error(f"Error loading daily data: {e}")
-    else:
-        st.warning("`daily_k_props.json` not found.")
+                                    rate = leg.get("hit_rate", 0)
+                                    rate_color = "#00ff88" if rate >= 70 else "#ffcc00" if rate >= 50 else "#aaa"
+                                    st.markdown(
+                                        f"Leg {j}: **{leg.get('player','?')}** — {leg.get('prop','')} "
+                                        f"<span style='color:{rate_color}'>({rate}%)</span>",
+                                        unsafe_allow_html=True
+                                    )
+                                st.markdown("</div>", unsafe_allow_html=True)
+            else:
+                st.info("No parlay suggestions yet. Click Generate above.")
 
 # ====================== TAB 2: PLAYER STATS ======================
 with tab_player:
@@ -485,59 +754,68 @@ with tab_player:
 
     # ====================== HOT LISTS ======================
     if selected_game:
-        daily_file = "daily_k_props.json"
-        if os.path.exists(daily_file):
-            try:
-                with open(daily_file, "r", encoding="utf-8") as f:
-                    daily_data = json.load(f)
+        game_daily_data = st.session_state.get("live_props")
+        # Fall back to legacy JSON
+        if game_daily_data is None:
+            daily_file = "daily_k_props.json"
+            if os.path.exists(daily_file):
+                try:
+                    with open(daily_file, "r", encoding="utf-8") as f:
+                        game_daily_data = json.load(f)
+                except Exception:
+                    game_daily_data = None
 
-                st.subheader("🔥 Today's Prop Hot Lists (≥80% Hit Rate - Last 10 Games)")
-                st.caption(f"Filtered for **{selected_game['display']}**")
+        if game_daily_data:
+            st.subheader("🔥 Today's Prop Hot Lists — This Game")
+            st.caption(f"Filtered for **{selected_game['display']}**")
 
-                col1, col2, col3 = st.columns(3)
-                search_pattern = f"{selected_game['awayAbbrev']}|{selected_game['homeAbbrev']}"
+            col1, col2, col3 = st.columns(3)
+            search_pattern = f"{selected_game['awayAbbrev']}|{selected_game['homeAbbrev']}"
 
-                with col1:
-                    st.markdown("**Hits Hot List**")
-                    hits_list = daily_data.get("hits_qualifiers", [])
-                    if hits_list:
-                        df = pd.DataFrame(hits_list)
-                        df_game = df[df["player"].str.contains(search_pattern, na=False, case=False)].copy()
-                        if not df_game.empty:
-                            hit_cols = ["player", "over_0.5_H", "over_1.5_H"]
-                            available_cols = [c for c in hit_cols if c in df_game.columns]
-                            st.dataframe(df_game[available_cols].head(10), use_container_width=True, hide_index=True)
-                        else:
-                            st.info("No hot hitters in this game.")
+            with col1:
+                st.markdown("**Hits Hot List**")
+                hits_list = game_daily_data.get("hits_qualifiers", [])
+                if hits_list:
+                    df_h2 = pd.DataFrame(hits_list)
+                    df_game = df_h2[df_h2["player"].str.contains(search_pattern, na=False, case=False)].copy()
+                    if not df_game.empty:
+                        hit_cols = [c for c in ["player", "over_0.5_H", "over_1.5_H"] if c in df_game.columns]
+                        st.dataframe(df_game[hit_cols].head(10), use_container_width=True, hide_index=True)
+                    else:
+                        st.info("No hot hitters in this game.")
+                else:
+                    st.info("Generate props in Tab 1 first.")
 
-                with col2:
-                    st.markdown("**Strikeouts Hot List**")
-                    k_list = (daily_data.get("k_qualifiers", []) or 
-                             daily_data.get("strikeout_qualifiers", []) or 
-                             daily_data.get("ks_qualifiers", []) or 
-                             daily_data.get("strikeouts_qualifiers", []))
-                    if k_list:
-                        df = pd.DataFrame(k_list)
-                        df_game = df[df["player"].str.contains(search_pattern, na=False, case=False)].copy()
-                        if not df_game.empty:
-                            k_cols = ["player"] + [c for c in df_game.columns if any(x in c.lower() for x in ["k", "strike"])]
-                            st.dataframe(df_game[k_cols].head(12), use_container_width=True, hide_index=True)
-                        else:
-                            st.info("No high strikeout props in this game.")
+            with col2:
+                st.markdown("**Pitcher K Props**")
+                k_list2 = game_daily_data.get("k_qualifiers", [])
+                if k_list2:
+                    df_k2 = pd.DataFrame(k_list2)
+                    pitcher_col = "pitcher" if "pitcher" in df_k2.columns else "player"
+                    df_game_k = df_k2[df_k2[pitcher_col].str.contains(search_pattern, na=False, case=False)].copy()
+                    if not df_game_k.empty:
+                        k_cols = [c for c in [pitcher_col, "K/9", "avg_K", "over_3.5_K", "over_4.5_K"] if c in df_game_k.columns]
+                        st.dataframe(df_game_k[k_cols], use_container_width=True, hide_index=True)
+                    else:
+                        st.info("No K prop data for pitchers in this game.")
+                else:
+                    st.info("Generate props in Tab 1 first.")
 
-                with col3:
-                    st.markdown("**H + R + RBI Hot List**")
-                    hrr_list = daily_data.get("hrr_qualifiers", [])
-                    if hrr_list:
-                        df = pd.DataFrame(hrr_list)
-                        df_game = df[df["player"].str.contains(search_pattern, na=False, case=False)].copy()
-                        if not df_game.empty:
-                            st.dataframe(df_game[["player", "over_1.5_HRR"]].head(10), use_container_width=True, hide_index=True)
-                        else:
-                            st.info("No hot H+R+RBI in this game.")
-
-            except Exception as e:
-                st.error(f"Error loading hot lists: {e}")
+            with col3:
+                st.markdown("**H + R + RBI Hot List**")
+                hrr_list2 = game_daily_data.get("hrr_qualifiers", [])
+                if hrr_list2:
+                    df_hrr2 = pd.DataFrame(hrr_list2)
+                    df_game_hrr = df_hrr2[df_hrr2["player"].str.contains(search_pattern, na=False, case=False)].copy()
+                    if not df_game_hrr.empty:
+                        hrr_cols = [c for c in ["player", "over_1.5_HRR"] if c in df_game_hrr.columns]
+                        st.dataframe(df_game_hrr[hrr_cols].head(10), use_container_width=True, hide_index=True)
+                    else:
+                        st.info("No hot H+R+RBI in this game.")
+                else:
+                    st.info("Generate props in Tab 1 first.")
+        else:
+            st.info("💡 Go to **Today's Parlay Suggestions** tab and click **Generate** to load prop hot lists.")
 
         st.divider()
 
