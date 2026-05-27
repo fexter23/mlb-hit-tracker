@@ -31,6 +31,7 @@ def get_pitcher_era(pitcher_id: int) -> str:
     if not pitcher_id:
         return "?.??"
     try:
+        # Keep track of current year via forced eastern context if required, default to local year
         year = datetime.datetime.now().year
         stats_url = f"https://statsapi.mlb.com/api/v1/people/{pitcher_id}/stats?stats=season&group=pitching&season={year}"
         s_resp = requests.get(stats_url, timeout=8)
@@ -49,7 +50,15 @@ def get_pitcher_era(pitcher_id: int) -> str:
 
 @st.cache_data(ttl=1800)
 def get_todays_games():
-    today = datetime.date.today().strftime("%Y-%m-%d")
+    # Forced Timezone Alignment: Ensure games match the current date in Eastern Time (America/New_York)
+    try:
+        import pytz
+        tz = pytz.timezone("America/New_York")
+        today = datetime.datetime.now(tz).strftime("%Y-%m-%d")
+    except ImportError:
+        # Fallback to standard offset math if pytz isn't present in environment
+        today = (datetime.datetime.utcnow() - datetime.timedelta(hours=4)).strftime("%Y-%m-%d")
+
     url = f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={today}&hydrate=team,probablePitcher"
     
     try:
@@ -271,7 +280,6 @@ def calculate_outs(ip_str):
 
 def score_batter_props(player_id: int, player_name: str, team_abbrev: str,
                        opp_era: str, park_factor: int) -> dict | None:
-    """Score all batter props over last 10 games."""
     logs = get_game_log(player_id, "hitting")
     if not logs or len(logs) < 5:
         return None
@@ -300,7 +308,6 @@ def score_batter_props(player_id: int, player_name: str, team_abbrev: str,
 
 
 def score_pitcher_props(pitcher_id: int, pitcher_name: str, team_abbrev: str) -> dict | None:
-    """Score all pitcher props over last 5 starts."""
     if not pitcher_id:
         return None
     logs = get_game_log(pitcher_id, "pitching")
@@ -346,9 +353,6 @@ def score_pitcher_props(pitcher_id: int, pitcher_name: str, team_abbrev: str) ->
 
 
 def generate_live_props(games: list, progress_bar=None) -> dict:
-    """
-    Fetch and score all batters + starting pitchers for today's games.
-    """
     batter_results  = []
     pitcher_results = []
     total_steps     = len(games) * 2
@@ -388,7 +392,6 @@ def generate_live_props(games: list, progress_bar=None) -> dict:
     def pitcher_sorted(col):
         return sorted(pitcher_results, key=lambda x: x.get(col, 0), reverse=True)
 
-    # Parlay suggestions
     parlay_suggestions = []
     top_hits = batter_hot("over_0.5_H")[:6]
     top_k    = [r for r in pitcher_sorted("over_4.5_K") if r.get("over_4.5_K", 0) >= 80][:4]
@@ -405,9 +408,15 @@ def generate_live_props(games: list, progress_bar=None) -> dict:
     if progress_bar:
         progress_bar.progress(1.0)
 
+    try:
+        import pytz
+        tz = pytz.timezone("America/New_York")
+        date_str = datetime.datetime.now(tz).strftime("%Y-%m-%d")
+    except ImportError:
+        date_str = (datetime.datetime.utcnow() - datetime.timedelta(hours=4)).strftime("%Y-%m-%d")
+
     return {
-        "date":               datetime.date.today().strftime("%Y-%m-%d"),
-        # Batter hot lists (≥80%)
+        "date":               date_str,
         "hits_qualifiers":    batter_hot("over_0.5_H"),
         "hits15_qualifiers":  batter_hot("over_1.5_H"),
         "runs_qualifiers":    batter_hot("over_0.5_R"),
@@ -416,7 +425,6 @@ def generate_live_props(games: list, progress_bar=None) -> dict:
         "batter_k_qualifiers":batter_hot("over_0.5_K"),
         "hrr_qualifiers":     batter_hot("over_1.5_HRR"),
         "hrr25_qualifiers":   batter_hot("over_2.5_HRR"),
-        # Full pitcher list sorted by best K rate (all displayed, not filtered)
         "k_qualifiers":       pitcher_sorted("over_4.5_K"),
         "er_qualifiers":      pitcher_sorted("over_1.5_ER"),
         "bb_qualifiers":      pitcher_sorted("over_1.5_BB"),
@@ -476,7 +484,6 @@ def compute_confidence_score(
     except (ValueError, TypeError):
         scores["Opp. ERA"] = 7.5
 
-    # BvP
     bvp_score = 0.0
     if bvp_season and bvp_season.get("atBats", 0) >= 2:
         try:
@@ -499,7 +506,6 @@ def compute_confidence_score(
     streak_bonus = 10.0 if "Streak" in streak_label else (0.0 if "Slump" in streak_label else 5.0)
     scores["Streak/Slump"] = streak_bonus
 
-    # Platoon
     platoon_score = 5.0
     if platoon_split and pitcher_hand in ("L", "R"):
         code = "vl" if pitcher_hand == "L" else "vr"
@@ -525,13 +531,18 @@ tab_parlays, tab_player = st.tabs(["🎯 Today's Parlay Suggestions", "📊 Play
 with tab_parlays:
     st.subheader("🎯 Today's Parlay Suggestions & Prop Hot Lists")
 
-    # ---- Session state for generated data ----
     if "live_props" not in st.session_state:
         st.session_state.live_props = None
     if "props_date" not in st.session_state:
         st.session_state.props_date = None
 
-    date_today = datetime.date.today().strftime("%Y-%m-%d")
+    try:
+        import pytz
+        tz = pytz.timezone("America/New_York")
+        date_today = datetime.datetime.now(tz).strftime("%Y-%m-%d")
+    except ImportError:
+        date_today = (datetime.datetime.utcnow() - datetime.timedelta(hours=4)).strftime("%Y-%m-%d")
+
     data_is_stale = st.session_state.props_date != date_today
 
     col_gen1, col_gen2 = st.columns([3, 1])
@@ -559,10 +570,8 @@ with tab_parlays:
                 st.session_state.props_generated_at = datetime.datetime.now().strftime("%H:%M")
                 st.rerun()
 
-    # ---- Render data if available ----
     daily_data = st.session_state.live_props
 
-    # Fall back to legacy JSON file if it exists and no live data yet
     if daily_data is None:
         daily_file = "daily_k_props.json"
         if os.path.exists(daily_file):
@@ -577,7 +586,6 @@ with tab_parlays:
                 daily_data = None
 
     if daily_data:
-        # ---- Helper for coloured dataframes ----
         def rate_style(df_in, rate_cols):
             def _color(val):
                 try:
@@ -602,7 +610,6 @@ with tab_parlays:
             "🎯 Parlays",
         ])
 
-        # ---- Hits ----
         with prop_tab_hits:
             st.caption("Batters with ≥80% hit rate — last 10 games")
             data = daily_data.get("hits_qualifiers", [])
@@ -610,11 +617,10 @@ with tab_parlays:
                 df_ = pd.DataFrame(data)
                 cols_ = [c for c in ["player", "over_0.5_H", "over_1.5_H", "games"] if c in df_.columns]
                 st.dataframe(rate_style(df_[cols_], ["over_0.5_H","over_1.5_H"]), use_container_width=True, hide_index=True)
-                st.success(f"✅ **{len(df_)} batters** at ≥80% on Over 0.5 H")
+                st.success(f"✅ **{len(df_)} batters** at ≥80% on Over 0.5 Hits")
             else:
                 st.info(no_data_msg)
 
-        # ---- Runs ----
         with prop_tab_runs:
             st.caption("Batters with ≥80% hit rate on Over 0.5 Runs — last 10 games")
             data = daily_data.get("runs_qualifiers", [])
@@ -622,11 +628,10 @@ with tab_parlays:
                 df_ = pd.DataFrame(data)
                 cols_ = [c for c in ["player", "over_0.5_R", "games"] if c in df_.columns]
                 st.dataframe(rate_style(df_[cols_], ["over_0.5_R"]), use_container_width=True, hide_index=True)
-                st.success(f"✅ **{len(df_)} batters** at ≥80% on Over 0.5 R")
+                st.success(f"✅ **{len(df_)} batters** at ≥80% on Over 0.5 Runs")
             else:
                 st.info(no_data_msg)
 
-        # ---- RBI ----
         with prop_tab_rbi:
             st.caption("Batters with ≥80% hit rate on RBI props — last 10 games")
             data = daily_data.get("rbi_qualifiers", [])
@@ -638,7 +643,6 @@ with tab_parlays:
             else:
                 st.info(no_data_msg)
 
-        # ---- Batter Ks ----
         with prop_tab_bk:
             st.caption("Batters with ≥80% hit rate on strikeout props — last 10 games")
             data = daily_data.get("batter_k_qualifiers", [])
@@ -650,7 +654,6 @@ with tab_parlays:
             else:
                 st.info(no_data_msg)
 
-        # ---- H+R+RBI ----
         with prop_tab_hrr:
             st.caption("Batters with ≥80% hit rate on H+R+RBI — last 10 games")
             data = daily_data.get("hrr_qualifiers", [])
@@ -662,7 +665,6 @@ with tab_parlays:
             else:
                 st.info(no_data_msg)
 
-        # ---- Pitcher Ks ----
         with prop_tab_k:
             st.caption("Starting pitchers ranked by K rate — last 5 starts")
             data = daily_data.get("k_qualifiers", [])
@@ -701,7 +703,6 @@ with tab_parlays:
             else:
                 st.info(no_data_msg)
 
-        # ---- Earned Runs ----
         with prop_tab_er:
             st.caption("Starting pitchers ranked by ER rate — last 5 starts")
             data = daily_data.get("er_qualifiers", [])
@@ -712,7 +713,6 @@ with tab_parlays:
             else:
                 st.info(no_data_msg)
 
-        # ---- Walks Issued ----
         with prop_tab_bb:
             st.caption("Starting pitchers ranked by walks issued rate — last 5 starts")
             data = daily_data.get("bb_qualifiers", [])
@@ -723,7 +723,6 @@ with tab_parlays:
             else:
                 st.info(no_data_msg)
 
-        # ---- Hits Allowed ----
         with prop_tab_ha:
             st.caption("Starting pitchers ranked by hits allowed rate — last 5 starts")
             data = daily_data.get("ha_qualifiers", [])
@@ -734,7 +733,6 @@ with tab_parlays:
             else:
                 st.info(no_data_msg)
 
-        # ---- Parlay Suggestions ----
         with prop_tab_parlay:
             suggestions = daily_data.get("parlay_suggestions", [])
             if suggestions:
@@ -826,10 +824,8 @@ with tab_player:
                     thresh_opts = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5] if not (is_pitcher and selected_stat == "Outs") else [12.5, 15.5, 17.5, 18.5]
                     threshold = st.selectbox("Threshold", options=thresh_opts, format_func=lambda x: f"{x:.1f}")
 
-    # ====================== HOT LISTS ======================
     if selected_game:
         game_daily_data = st.session_state.get("live_props")
-        # Fall back to legacy JSON
         if game_daily_data is None:
             daily_file = "daily_k_props.json"
             if os.path.exists(daily_file):
@@ -902,7 +898,7 @@ with tab_player:
                         "ER": int(stt.get("earnedRuns", 0)), 
                         "Outs": calculate_outs(stt.get("inningsPitched", "0.0")),
                         "BB": int(stt.get("baseOnBalls", 0)),
-                        "HA": int(stt.get("hits", 0))  # Extracted pitch metrics correctly mapped to 'HA'
+                        "HA": int(stt.get("hits", 0))
                     })
                 else:
                     h = int(stt.get("hits", 0))
@@ -923,7 +919,7 @@ with tab_player:
                 "Earned Runs": "ER", 
                 "Outs": "Outs", 
                 "Walks Issued": "BB",
-                "Hits Allowed": "HA"  # Maps Sidebar select key perfectly to the parsed dataframe column
+                "Hits Allowed": "HA"
             }
             stat_col = mapping.get(selected_stat)
 
@@ -947,7 +943,6 @@ with tab_player:
                     streak_label, platoon_splits, pitcher_hand
                 )
 
-                # Confidence + Streak Banner
                 conf_color = "#00ff88" if confidence >= 70 else "#ffcc00" if confidence >= 50 else "#ff5555"
                 conf_label = "High" if confidence >= 70 else "Medium" if confidence >= 50 else "Low"
                 st.markdown(
@@ -1027,7 +1022,6 @@ with tab_player:
                                             unsafe_allow_html=True
                                         )
 
-                    # ==== FIXED PITCHER RECENT FORM ====
                     if opp_pid:
                         pitcher_form = get_pitcher_recent_form(opp_pid, num_starts=4)
                         if pitcher_form:
