@@ -816,7 +816,7 @@ with tab_player:
                     stat_options = ["Strikeouts", "Earned Runs", "Outs", "Hits Allowed", "Walks Issued"] if is_pitcher else ["Hits", "Runs", "RBI", "H+R+RBI", "Strikeouts"]
                     selected_stat = st.selectbox("Stat", options=stat_options, key="stat_select")
                 with col_thresh:
-                    thresh_opts = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5,6.5] if not (is_pitcher and selected_stat == "Outs") else [12.5, 15.5, 17.5, 18.5]
+                    thresh_opts = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5] if not (is_pitcher and selected_stat == "Outs") else [12.5, 15.5, 17.5, 18.5]
                     threshold = st.selectbox("Threshold", options=thresh_opts, format_func=lambda x: f"{x:.1f}")
 
     if selected_game:
