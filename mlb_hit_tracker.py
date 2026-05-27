@@ -391,7 +391,7 @@ def generate_live_props(games: list, progress_bar=None) -> dict:
     # Build simple 3-leg parlay suggestions from top hits + hrr + k prop
     parlay_suggestions = []
     top_hits = [r for r in hits_q if r["over_0.5_H"] >= 80][:6]
-    top_k    = [r for r in k_q    if r["over_4.5_K"] >= 60][:4]
+    top_k    = [r for r in k_q    if r["over_4.5_K"] >= 80][:4]
 
     for i in range(0, min(len(top_hits), 6), 3):
         legs_pool = top_hits[i:i+3]
@@ -640,9 +640,9 @@ with tab_parlays:
                 st.dataframe(styled_k, use_container_width=True, hide_index=True)
 
                 # Highlight top K plays
-                top_k_plays = df_k[df_k["over_4.5_K"] >= 60].sort_values("over_4.5_K", ascending=False) if "over_4.5_K" in df_k.columns else pd.DataFrame()
+                top_k_plays = df_k[df_k["over_4.5_K"] >= 80].sort_values("over_4.5_K", ascending=False) if "over_4.5_K" in df_k.columns else pd.DataFrame()
                 if not top_k_plays.empty:
-                    st.markdown("**🎯 Top K Plays (≥60% on Over 4.5 K):**")
+                    st.markdown("**🎯 Top K Plays (≥80% on Over 4.5 K):**")
                     for _, row in top_k_plays.head(5).iterrows():
                         k9_val = row.get("K/9", "?")
                         avg_val = row.get("avg_K", "?")
@@ -746,7 +746,7 @@ with tab_player:
 
                 col_stat, col_thresh = st.columns(2)
                 with col_stat:
-                    stat_options = ["Strikeouts", "Earned Runs", "Outs", "Hits Allowed"] if is_pitcher else ["Hits", "Runs", "RBI", "H+R+RBI", "Strikeouts"]
+                    stat_options = ["Strikeouts", "Earned Runs", "Outs", "Hits Allowed", "Walks Issued"] if is_pitcher else ["Hits", "Runs", "RBI", "H+R+RBI", "Strikeouts"]
                     selected_stat = st.selectbox("Stat", options=stat_options, key="stat_select")
                 with col_thresh:
                     thresh_opts = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5] if not (is_pitcher and selected_stat == "Outs") else [12.5, 15.5, 17.5, 18.5]
@@ -832,7 +832,8 @@ with tab_player:
                 if is_pitcher:
                     rec.update({"K": int(stt.get("strikeOuts", 0)), 
                               "ER": int(stt.get("earnedRuns", 0)), 
-                              "Outs": calculate_outs(stt.get("inningsPitched", "0.0"))})
+                              "Outs": calculate_outs(stt.get("inningsPitched", "0.0")),
+                              "BB": int(stt.get("baseOnBalls", 0))})
                 else:
                     h = int(stt.get("hits", 0))
                     r = int(stt.get("runs", 0))
@@ -844,7 +845,7 @@ with tab_player:
             
             df = pd.DataFrame(records).sort_values("Date", ascending=False)
             mapping = {"Hits": "H", "Runs": "R", "RBI": "RBI", "H+R+RBI": "H+R+RBI",
-                       "Strikeouts": "K", "Earned Runs": "ER", "Outs": "Outs"}
+                       "Strikeouts": "K", "Earned Runs": "ER", "Outs": "Outs", "Walks Issued": "BB"}
             stat_col = mapping.get(selected_stat)
 
             if stat_col in df.columns:
