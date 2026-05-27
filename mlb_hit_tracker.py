@@ -379,18 +379,18 @@ def generate_live_props(games: list, progress_bar=None) -> dict:
 
     # Sort & filter
     hits_q = sorted(
-        [r for r in hits_results if r["over_0.5_H"] >= 60],
+        [r for r in hits_results if r["over_0.5_H"] >= 80],
         key=lambda x: x["over_0.5_H"], reverse=True
     )
     hrr_q = sorted(
-        [r for r in hrr_results if r["over_1.5_HRR"] >= 60],
+        [r for r in hrr_results if r["over_1.5_HRR"] >= 80],
         key=lambda x: x["over_1.5_HRR"], reverse=True
     )
     k_q = sorted(k_results, key=lambda x: x["over_4.5_K"], reverse=True)
 
     # Build simple 3-leg parlay suggestions from top hits + hrr + k prop
     parlay_suggestions = []
-    top_hits = [r for r in hits_q if r["over_0.5_H"] >= 70][:6]
+    top_hits = [r for r in hits_q if r["over_0.5_H"] >= 80][:6]
     top_k    = [r for r in k_q    if r["over_4.5_K"] >= 60][:4]
 
     for i in range(0, min(len(top_hits), 6), 3):
@@ -584,7 +584,7 @@ with tab_parlays:
                     df_h[avail].sort_values("over_0.5_H", ascending=False).reset_index(drop=True),
                     use_container_width=True, hide_index=True
                 )
-                st.success(f"✅ **{len(df_h)} batters** with ≥60% hit rate on Over 0.5 H")
+                st.success(f"✅ **{len(df_h)} batters** with ≥80% hit rate on Over 0.5 H")
             else:
                 st.info("No hits data available. Click Generate above.")
 
@@ -598,7 +598,7 @@ with tab_parlays:
                     df_hrr[avail].sort_values("over_1.5_HRR", ascending=False).reset_index(drop=True),
                     use_container_width=True, hide_index=True
                 )
-                st.success(f"✅ **{len(df_hrr)} batters** with ≥60% hit rate on Over 1.5 H+R+RBI")
+                st.success(f"✅ **{len(df_hrr)} batters** with ≥80% hit rate on Over 1.5 H+R+RBI")
             else:
                 st.info("No H+R+RBI data available. Click Generate above.")
 
