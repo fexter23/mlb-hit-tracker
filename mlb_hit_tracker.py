@@ -49,12 +49,8 @@ def get_pitcher_era(pitcher_id: int) -> str:
 
 @st.cache_data(ttl=1800)
 def get_todays_games():
-    # Force the local date calculation using your system's timezone
-    local_today = datetime.datetime.now().date()
-    today_str = local_today.strftime("%Y-%m-%d")
-    
-    # useToDate=true ensures the schedule boundary is locked strictly to your requested date
-    url = f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={today_str}&useToDate=true&hydrate=team,probablePitcher"
+    today = datetime.date.today().strftime("%Y-%m-%d")
+    url = f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={today}&hydrate=team,probablePitcher"
     
     try:
         resp = requests.get(url, timeout=10)
@@ -63,10 +59,6 @@ def get_todays_games():
         games = []
 
         for date in data.get("dates", []):
-            # Strict date filtering to block the API's internal UTC day rolling over too early
-            if date.get("date") != today_str:
-                continue
-                
             for game in date.get("games", []):
                 away = game.get("teams", {}).get("away", {}).get("team", {})
                 home = game.get("teams", {}).get("home", {}).get("team", {})
@@ -1083,4 +1075,3 @@ with tab_player:
             st.info("No game logs found for this season.")
     elif selected_game:
         st.info("👈 Select a player from the sidebar to view detailed analytics.")
-}
