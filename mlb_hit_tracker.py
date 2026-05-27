@@ -2,6 +2,8 @@ import streamlit as st
 import requests
 import pandas as pd
 import datetime
+from datetime import datetime as dt
+import zoneinfo
 import plotly.express as px
 import json
 import os
@@ -49,11 +51,10 @@ def get_pitcher_era(pitcher_id: int) -> str:
 
 @st.cache_data(ttl=1800)
 def get_todays_games():
-    # Force the local date calculation using your system's timezone
-    local_today = datetime.datetime.now().date()
-    today_str = local_today.strftime("%Y-%m-%d")
+    # Force Eastern Time zone to handle post-8 PM UTC server rollovers
+    local_tz = zoneinfo.ZoneInfo("America/New_York")
+    today_str = dt.now(local_tz).date().strftime("%Y-%m-%d")
     
-    # useToDate=true ensures the schedule boundary is locked strictly to your requested date
     url = f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={today_str}&useToDate=true&hydrate=team,probablePitcher"
     
     try:
@@ -63,7 +64,7 @@ def get_todays_games():
         games = []
 
         for date in data.get("dates", []):
-            # Strict date filtering to block the API's internal UTC day rolling over too early
+            # Enforce strict date filtering against the derived local date
             if date.get("date") != today_str:
                 continue
                 
@@ -279,7 +280,6 @@ def calculate_outs(ip_str):
 
 def score_batter_props(player_id: int, player_name: str, team_abbrev: str,
                        opp_era: str, park_factor: int) -> dict | None:
-    """Score all batter props over last 10 games."""
     logs = get_game_log(player_id, "hitting")
     if not logs or len(logs) < 5:
         return None
@@ -308,7 +308,6 @@ def score_batter_props(player_id: int, player_name: str, team_abbrev: str,
 
 
 def score_pitcher_props(pitcher_id: int, pitcher_name: str, team_abbrev: str) -> dict | None:
-    """Score all pitcher props over last 5 starts."""
     if not pitcher_id:
         return None
     logs = get_game_log(pitcher_id, "pitching")
@@ -354,7 +353,9 @@ def score_pitcher_props(pitcher_id: int, pitcher_name: str, team_abbrev: str) ->
 
 
 def generate_live_props(games: list, progress_bar=None) -> dict:
-    """Fetch and score all batters + starting pitchers for today's games."""
+    local_tz = zoneinfo.ZoneInfo("America/New_York")
+    date_today_str = dt.now(local_tz).date().strftime("%Y-%m-%d")
+
     batter_results  = []
     pitcher_results = []
     total_steps     = len(games) * 2
@@ -412,7 +413,7 @@ def generate_live_props(games: list, progress_bar=None) -> dict:
         progress_bar.progress(1.0)
 
     return {
-        "date":               datetime.date.today().strftime("%Y-%m-%d"),
+        "date":               date_today_str,
         "hits_qualifiers":    batter_hot("over_0.5_H"),
         "hits15_qualifiers":  batter_hot("over_1.5_H"),
         "runs_qualifiers":    batter_hot("over_0.5_R"),
@@ -480,7 +481,6 @@ def compute_confidence_score(
     except (ValueError, TypeError):
         scores["Opp. ERA"] = 7.5
 
-    # BvP
     bvp_score = 0.0
     if bvp_season and bvp_season.get("atBats", 0) >= 2:
         try:
@@ -503,7 +503,6 @@ def compute_confidence_score(
     streak_bonus = 10.0 if "Streak" in streak_label else (0.0 if "Slump" in streak_label else 5.0)
     scores["Streak/Slump"] = streak_bonus
 
-    # Platoon
     platoon_score = 5.0
     if platoon_split and pitcher_hand in ("L", "R"):
         code = "vl" if pitcher_hand == "L" else "vr"
@@ -534,7 +533,8 @@ with tab_parlays:
     if "props_date" not in st.session_state:
         st.session_state.props_date = None
 
-    date_today = datetime.date.today().strftime("%Y-%m-%d")
+    local_tz = zoneinfo.ZoneInfo("America/New_York")
+    date_today = dt.now(local_tz).date().strftime("%Y-%m-%d")
     data_is_stale = st.session_state.props_date != date_today
 
     col_gen1, col_gen2 = st.columns([3, 1])
@@ -559,7 +559,7 @@ with tab_parlays:
                 prog.empty()
                 st.session_state.live_props = result
                 st.session_state.props_date = date_today
-                st.session_state.props_generated_at = datetime.datetime.now().strftime("%H:%M")
+                st.session_state.props_generated_at = dt.now(local_tz).strftime("%H:%M")
                 st.rerun()
 
     daily_data = st.session_state.live_props
@@ -680,18 +680,21 @@ with tab_parlays:
                         except: return ""
                     styled_ = styled_.map(_rc, subset=rate_cols_)
                 st.dataframe(styled_.format(precision=1), use_container_width=True, hide_index=True)
-                top_k_ = df_[df_["over_4.5_K"] >= 80].sort_values("over_4.5_K", ascending=False) if "over_4.5_K" in df_.columns else pd.DataFrame()
-                if not top_k_.empty:
-                    st.markdown("**🎯 Top K Plays (≥80% on Over 4.5 K):**")
-                    for _, row in top_k_.head(5).iterrows():
-                        st.markdown(
-                            f"<div style='background:#1e1e2e;border:1px solid #00ff88;border-radius:8px;"
-                            f"padding:8px 14px;margin-bottom:6px;display:flex;justify-content:space-between'>"
-                            f"<span style='font-weight:700'>{row['pitcher']}</span>"
-                            f"<span style='color:#aaa;font-size:12px'>K/9: <b style='color:#fff'>{row.get('K/9','?')}</b>"
-                            f" | Avg K: <b style='color:#fff'>{row.get('avg_K','?')}</b>"
-                            f" | Over 4.5: <b style='color:#00ff88'>{row.get('over_4.5_K','?')}%</b></span></div>",
-                            unsafe_allow_html=True)
+                
+                # Check for column safety before sorting
+                if "over_4.5_K" in df_.columns and not df_.empty:
+                    top_k_ = df_[df_["over_4.5_K"] >= 80].sort_values("over_4.5_K", ascending=False)
+                    if not top_k_.empty:
+                        st.markdown("**🎯 Top K Plays (≥80% on Over 4.5 K):**")
+                        for _, row in top_k_.head(5).iterrows():
+                            st.markdown(
+                                f"<div style='background:#1e1e2e;border:1px solid #00ff88;border-radius:8px;"
+                                f"padding:8px 14px;margin-bottom:6px;display:flex;justify-content:space-between'>"
+                                f"<span style='font-weight:700'>{row['pitcher']}</span>"
+                                f"<span style='color:#aaa;font-size:12px'>K/9: <b style='color:#fff'>{row.get('K/9','?')}</b>"
+                                f" | Avg K: <b style='color:#fff'>{row.get('avg_K','?')}</b>"
+                                f" | Over 4.5: <b style='color:#00ff88'>{row.get('over_4.5_K','?')}%</b></span></div>",
+                                unsafe_allow_html=True)
             else:
                 st.info(no_data_msg)
 
@@ -759,7 +762,7 @@ with tab_player:
         st.header("🎮 Game & Player Selection")
         today_games = get_todays_games()
         if not today_games:
-            st.error("No games today")
+            st.error("No games today found matching local time.")
             st.stop()
 
         game_options = [g["display"] for g in today_games]
@@ -862,7 +865,7 @@ with tab_player:
             with g_tab_hrr:
                 game_table("hrr_qualifiers",   "player",  ["player","over_1.5_HRR","over_2.5_HRR","games"], "over_1.5_HRR")
             with g_tab_pk:
-                game_table("k_qualifiers",     "pitcher", ["pitcher","K/9","avg_K","over_3.5_K","over_4.5_K","over_5.5_K","starts"], "over_4.4_K")
+                game_table("k_qualifiers",     "pitcher", ["pitcher","K/9","avg_K","over_3.5_K","over_4.5_K","over_5.5_K","starts"], "over_4.5_K")
             with g_tab_er:
                 game_table("er_qualifiers",    "pitcher", ["pitcher","over_0.5_ER","over_1.5_ER","over_2.5_ER","starts"], "over_1.5_ER")
             with g_tab_bb:
@@ -922,7 +925,6 @@ with tab_player:
                     streak_label, platoon_splits, pitcher_hand
                 )
 
-                # Confidence + Streak Banner (Curly braces properly double-escaped for raw CSS inside raw f-string)
                 conf_color = "#00ff88" if confidence >= 70 else "#ffcc00" if confidence >= 50 else "#ff5555"
                 conf_label = "High" if confidence >= 70 else "Medium" if confidence >= 50 else "Low"
                 st.markdown(
