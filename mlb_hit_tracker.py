@@ -271,34 +271,36 @@ def calculate_outs(ip_str):
 
 def score_batter_props(player_id: int, player_name: str, team_abbrev: str,
                        opp_era: str, park_factor: int) -> dict | None:
-    """Score a batter's H, H+R+RBI props over last 10 games."""
+    """Score all batter props over last 10 games."""
     logs = get_game_log(player_id, "hitting")
     if not logs or len(logs) < 5:
         return None
     records = []
     for s in logs:
         stt = s.get("stat", {})
-        h = int(stt.get("hits", 0))
-        r = int(stt.get("runs", 0))
+        h   = int(stt.get("hits", 0))
+        r   = int(stt.get("runs", 0))
         rbi = int(stt.get("rbi", 0))
-        records.append({"H": h, "R": r, "RBI": rbi, "HRR": h + r + rbi})
+        k   = int(stt.get("strikeOuts", 0))
+        records.append({"H": h, "R": r, "RBI": rbi, "K": k, "HRR": h + r + rbi})
     df = pd.DataFrame(records).head(10)
-
-    h_rate    = (df["H"]   > 0.5).mean() * 100
-    h15_rate  = (df["H"]   > 1.5).mean() * 100
-    hrr_rate  = (df["HRR"] > 1.5).mean() * 100
-
     return {
-        "player": f"{player_name} ({team_abbrev})",
-        "over_0.5_H":   round(h_rate, 1),
-        "over_1.5_H":   round(h15_rate, 1),
-        "over_1.5_HRR": round(hrr_rate, 1),
+        "player":       f"{player_name} ({team_abbrev})",
+        "over_0.5_H":   round((df["H"]   > 0.5).mean() * 100, 1),
+        "over_1.5_H":   round((df["H"]   > 1.5).mean() * 100, 1),
+        "over_0.5_R":   round((df["R"]   > 0.5).mean() * 100, 1),
+        "over_0.5_RBI": round((df["RBI"] > 0.5).mean() * 100, 1),
+        "over_1.5_RBI": round((df["RBI"] > 1.5).mean() * 100, 1),
+        "over_0.5_K":   round((df["K"]   > 0.5).mean() * 100, 1),
+        "over_1.5_K":   round((df["K"]   > 1.5).mean() * 100, 1),
+        "over_1.5_HRR": round((df["HRR"] > 1.5).mean() * 100, 1),
+        "over_2.5_HRR": round((df["HRR"] > 2.5).mean() * 100, 1),
         "games":        len(df),
     }
 
 
-def score_pitcher_k_props(pitcher_id: int, pitcher_name: str, team_abbrev: str) -> dict | None:
-    """Score a pitcher's strikeout props over last 5 starts."""
+def score_pitcher_props(pitcher_id: int, pitcher_name: str, team_abbrev: str) -> dict | None:
+    """Score all pitcher props over last 5 starts."""
     if not pitcher_id:
         return None
     logs = get_game_log(pitcher_id, "pitching")
@@ -310,89 +312,86 @@ def score_pitcher_k_props(pitcher_id: int, pitcher_name: str, team_abbrev: str) 
         stt = s.get("stat", {})
         ip_str = stt.get("inningsPitched", "0.0")
         outs = calculate_outs(ip_str)
-        ks = int(stt.get("strikeOuts", 0))
-        records.append({"K": ks, "outs": outs, "ip_str": ip_str})
+        records.append({
+            "K":  int(stt.get("strikeOuts", 0)),
+            "ER": int(stt.get("earnedRuns", 0)),
+            "BB": int(stt.get("baseOnBalls", 0)),
+            "HA": int(stt.get("hits", 0)),
+            "outs": outs,
+        })
 
     df = pd.DataFrame(records)
     total_outs = df["outs"].sum()
     total_ks   = df["K"].sum()
     k9 = round((total_ks / total_outs * 27) if total_outs > 0 else 0, 2)
 
-    k35_rate = (df["K"] > 3.5).mean() * 100
-    k45_rate = (df["K"] > 4.5).mean() * 100
-    k55_rate = (df["K"] > 5.5).mean() * 100
-    avg_k    = round(df["K"].mean(), 1)
-
     return {
-        "pitcher": f"{pitcher_name} ({team_abbrev})",
-        "K/9":          k9,
-        "avg_K":        avg_k,
-        "over_3.5_K":   round(k35_rate, 1),
-        "over_4.5_K":   round(k45_rate, 1),
-        "over_5.5_K":   round(k55_rate, 1),
-        "starts":       len(df),
+        "pitcher":       f"{pitcher_name} ({team_abbrev})",
+        "K/9":           k9,
+        "avg_K":         round(df["K"].mean(), 1),
+        "over_3.5_K":    round((df["K"]  > 3.5).mean() * 100, 1),
+        "over_4.5_K":    round((df["K"]  > 4.5).mean() * 100, 1),
+        "over_5.5_K":    round((df["K"]  > 5.5).mean() * 100, 1),
+        "over_0.5_ER":   round((df["ER"] > 0.5).mean() * 100, 1),
+        "over_1.5_ER":   round((df["ER"] > 1.5).mean() * 100, 1),
+        "over_2.5_ER":   round((df["ER"] > 2.5).mean() * 100, 1),
+        "over_0.5_BB":   round((df["BB"] > 0.5).mean() * 100, 1),
+        "over_1.5_BB":   round((df["BB"] > 1.5).mean() * 100, 1),
+        "over_2.5_BB":   round((df["BB"] > 2.5).mean() * 100, 1),
+        "over_3.5_HA":   round((df["HA"] > 3.5).mean() * 100, 1),
+        "over_4.5_HA":   round((df["HA"] > 4.5).mean() * 100, 1),
+        "over_5.5_HA":   round((df["HA"] > 5.5).mean() * 100, 1),
+        "starts":        len(df),
     }
 
 
 def generate_live_props(games: list, progress_bar=None) -> dict:
     """
     Fetch and score all batters + starting pitchers for today's games.
-    Returns dict with keys: hits_qualifiers, hrr_qualifiers, k_qualifiers, parlay_suggestions.
     """
-    hits_results = []
-    hrr_results  = []
-    k_results    = []
-    total_steps  = len(games) * 2  # away + home roster per game, plus pitchers
+    batter_results  = []
+    pitcher_results = []
+    total_steps     = len(games) * 2
     step = 0
 
     for game in games:
         for side in ("away", "home"):
-            team_id    = game["awayId"]    if side == "away" else game["homeId"]
-            team_abbrev= game["awayAbbrev"]if side == "away" else game["homeAbbrev"]
-            opp_era    = game["homePERA"]  if side == "away" else game["awayPERA"]
-            pf         = PARK_FACTORS.get(game["homeAbbrev"], 100)
+            team_id     = game["awayId"]     if side == "away" else game["homeId"]
+            team_abbrev = game["awayAbbrev"] if side == "away" else game["homeAbbrev"]
+            opp_era     = game["homePERA"]   if side == "away" else game["awayPERA"]
+            pf          = PARK_FACTORS.get(game["homeAbbrev"], 100)
 
             roster = get_team_active_roster(team_id)
             for player in roster:
-                if player["posCode"] == "1":   # pitchers handled separately
+                if player["posCode"] == "1":
                     continue
-                result = score_batter_props(
-                    player["id"], player["fullName"], team_abbrev, opp_era, pf
-                )
+                result = score_batter_props(player["id"], player["fullName"], team_abbrev, opp_era, pf)
                 if result:
-                    hits_results.append(result)
-                    hrr_results.append(result)
+                    batter_results.append(result)
 
             step += 1
             if progress_bar:
                 progress_bar.progress(min(step / total_steps, 0.9))
 
-        # Score both probable starters
         for pid, pname, tabbrev in [
             (game["awayPID"], game["awayP"], game["awayAbbrev"]),
             (game["homePID"], game["homeP"], game["homeAbbrev"]),
         ]:
             if pid:
-                result = score_pitcher_k_props(pid, pname, tabbrev)
+                result = score_pitcher_props(pid, pname, tabbrev)
                 if result:
-                    k_results.append(result)
+                    pitcher_results.append(result)
 
-    # Sort & filter
-    hits_q = sorted(
-        [r for r in hits_results if r["over_0.5_H"] >= 80],
-        key=lambda x: x["over_0.5_H"], reverse=True
-    )
-    hrr_q = sorted(
-        [r for r in hrr_results if r["over_1.5_HRR"] >= 80],
-        key=lambda x: x["over_1.5_HRR"], reverse=True
-    )
-    k_q = sorted(k_results, key=lambda x: x["over_4.5_K"], reverse=True)
+    def batter_hot(col):
+        return sorted([r for r in batter_results if r.get(col, 0) >= 80], key=lambda x: x.get(col, 0), reverse=True)
 
-    # Build simple 3-leg parlay suggestions from top hits + hrr + k prop
+    def pitcher_sorted(col):
+        return sorted(pitcher_results, key=lambda x: x.get(col, 0), reverse=True)
+
+    # Parlay suggestions
     parlay_suggestions = []
-    top_hits = [r for r in hits_q if r["over_0.5_H"] >= 80][:6]
-    top_k    = [r for r in k_q    if r["over_4.5_K"] >= 80][:4]
-
+    top_hits = batter_hot("over_0.5_H")[:6]
+    top_k    = [r for r in pitcher_sorted("over_4.5_K") if r.get("over_4.5_K", 0) >= 80][:4]
     for i in range(0, min(len(top_hits), 6), 3):
         legs_pool = top_hits[i:i+3]
         if len(legs_pool) < 2:
@@ -401,19 +400,27 @@ def generate_live_props(games: list, progress_bar=None) -> dict:
         if top_k:
             k_leg = top_k[i // 3] if (i // 3) < len(top_k) else top_k[0]
             legs[-1] = {"player": k_leg["pitcher"], "prop": "Over 4.5 Ks", "hit_rate": k_leg["over_4.5_K"]}
-        parlay_suggestions.append({
-            "game": "Today's Games",
-            "legs": legs,
-        })
+        parlay_suggestions.append({"game": "Today's Games", "legs": legs})
 
     if progress_bar:
         progress_bar.progress(1.0)
 
     return {
-        "date": datetime.date.today().strftime("%Y-%m-%d"),
-        "hits_qualifiers": hits_q,
-        "hrr_qualifiers":  hrr_q,
-        "k_qualifiers":    k_q,
+        "date":               datetime.date.today().strftime("%Y-%m-%d"),
+        # Batter hot lists (≥80%)
+        "hits_qualifiers":    batter_hot("over_0.5_H"),
+        "hits15_qualifiers":  batter_hot("over_1.5_H"),
+        "runs_qualifiers":    batter_hot("over_0.5_R"),
+        "rbi_qualifiers":     batter_hot("over_0.5_RBI"),
+        "rbi15_qualifiers":   batter_hot("over_1.5_RBI"),
+        "batter_k_qualifiers":batter_hot("over_0.5_K"),
+        "hrr_qualifiers":     batter_hot("over_1.5_HRR"),
+        "hrr25_qualifiers":   batter_hot("over_2.5_HRR"),
+        # Full pitcher list sorted by best K rate (all displayed, not filtered)
+        "k_qualifiers":       pitcher_sorted("over_4.5_K"),
+        "er_qualifiers":      pitcher_sorted("over_1.5_ER"),
+        "bb_qualifiers":      pitcher_sorted("over_1.5_BB"),
+        "ha_qualifiers":      pitcher_sorted("over_4.5_HA"),
         "parlay_suggestions": parlay_suggestions,
     }
 
@@ -570,95 +577,162 @@ with tab_parlays:
                 daily_data = None
 
     if daily_data:
-        prop_tab_hits, prop_tab_hrr, prop_tab_k, prop_tab_parlay = st.tabs(
-            ["🟢 Hits Hot List", "🔥 H+R+RBI Hot List", "⚡ Pitcher K Props", "🎯 Parlay Suggestions"]
-        )
+        # ---- Helper for coloured dataframes ----
+        def rate_style(df_in, rate_cols):
+            def _color(val):
+                try:
+                    v = float(val)
+                    if v >= 80: return "color:#00ff88"
+                    if v >= 60: return "color:#ffcc00"
+                    return "color:#aaaaaa"
+                except:
+                    return ""
+            present = [c for c in rate_cols if c in df_in.columns]
+            return df_in.style.map(_color, subset=present).format(precision=1) if present else df_in.style
 
-        # ---- Hits Hot List ----
+        no_data_msg = "No data yet — click **⚡ Generate** above."
+
+        (prop_tab_hits, prop_tab_runs, prop_tab_rbi,
+         prop_tab_bk,   prop_tab_hrr,
+         prop_tab_k,    prop_tab_er, prop_tab_bb, prop_tab_ha,
+         prop_tab_parlay) = st.tabs([
+            "🟢 Hits", "🏃 Runs", "💥 RBI",
+            "🔴 Batter Ks", "🔥 H+R+RBI",
+            "⚡ Pitcher Ks", "💣 Earned Runs", "🚶 Walks", "🎯 Hits Allowed",
+            "🎯 Parlays",
+        ])
+
+        # ---- Hits ----
         with prop_tab_hits:
-            hits_list = daily_data.get("hits_qualifiers", [])
-            if hits_list:
-                df_h = pd.DataFrame(hits_list)
-                avail = [c for c in ["player", "over_0.5_H", "over_1.5_H", "games"] if c in df_h.columns]
-                st.dataframe(
-                    df_h[avail].sort_values("over_0.5_H", ascending=False).reset_index(drop=True),
-                    use_container_width=True, hide_index=True
-                )
-                st.success(f"✅ **{len(df_h)} batters** with ≥80% hit rate on Over 0.5 H")
+            st.caption("Batters with ≥80% hit rate — last 10 games")
+            data = daily_data.get("hits_qualifiers", [])
+            if data:
+                df_ = pd.DataFrame(data)
+                cols_ = [c for c in ["player", "over_0.5_H", "over_1.5_H", "games"] if c in df_.columns]
+                st.dataframe(rate_style(df_[cols_], ["over_0.5_H","over_1.5_H"]), use_container_width=True, hide_index=True)
+                st.success(f"✅ **{len(df_)} batters** at ≥80% on Over 0.5 H")
             else:
-                st.info("No hits data available. Click Generate above.")
+                st.info(no_data_msg)
 
-        # ---- H+R+RBI Hot List ----
+        # ---- Runs ----
+        with prop_tab_runs:
+            st.caption("Batters with ≥80% hit rate on Over 0.5 Runs — last 10 games")
+            data = daily_data.get("runs_qualifiers", [])
+            if data:
+                df_ = pd.DataFrame(data)
+                cols_ = [c for c in ["player", "over_0.5_R", "games"] if c in df_.columns]
+                st.dataframe(rate_style(df_[cols_], ["over_0.5_R"]), use_container_width=True, hide_index=True)
+                st.success(f"✅ **{len(df_)} batters** at ≥80% on Over 0.5 R")
+            else:
+                st.info(no_data_msg)
+
+        # ---- RBI ----
+        with prop_tab_rbi:
+            st.caption("Batters with ≥80% hit rate on RBI props — last 10 games")
+            data = daily_data.get("rbi_qualifiers", [])
+            if data:
+                df_ = pd.DataFrame(data)
+                cols_ = [c for c in ["player", "over_0.5_RBI", "over_1.5_RBI", "games"] if c in df_.columns]
+                st.dataframe(rate_style(df_[cols_], ["over_0.5_RBI","over_1.5_RBI"]), use_container_width=True, hide_index=True)
+                st.success(f"✅ **{len(df_)} batters** at ≥80% on Over 0.5 RBI")
+            else:
+                st.info(no_data_msg)
+
+        # ---- Batter Ks ----
+        with prop_tab_bk:
+            st.caption("Batters with ≥80% hit rate on strikeout props — last 10 games")
+            data = daily_data.get("batter_k_qualifiers", [])
+            if data:
+                df_ = pd.DataFrame(data)
+                cols_ = [c for c in ["player", "over_0.5_K", "over_1.5_K", "games"] if c in df_.columns]
+                st.dataframe(rate_style(df_[cols_], ["over_0.5_K","over_1.5_K"]), use_container_width=True, hide_index=True)
+                st.success(f"✅ **{len(df_)} batters** at ≥80% on Over 0.5 K")
+            else:
+                st.info(no_data_msg)
+
+        # ---- H+R+RBI ----
         with prop_tab_hrr:
-            hrr_list = daily_data.get("hrr_qualifiers", [])
-            if hrr_list:
-                df_hrr = pd.DataFrame(hrr_list)
-                avail = [c for c in ["player", "over_1.5_HRR", "over_0.5_H", "games"] if c in df_hrr.columns]
-                st.dataframe(
-                    df_hrr[avail].sort_values("over_1.5_HRR", ascending=False).reset_index(drop=True),
-                    use_container_width=True, hide_index=True
-                )
-                st.success(f"✅ **{len(df_hrr)} batters** with ≥80% hit rate on Over 1.5 H+R+RBI")
+            st.caption("Batters with ≥80% hit rate on H+R+RBI — last 10 games")
+            data = daily_data.get("hrr_qualifiers", [])
+            if data:
+                df_ = pd.DataFrame(data)
+                cols_ = [c for c in ["player", "over_1.5_HRR", "over_2.5_HRR", "games"] if c in df_.columns]
+                st.dataframe(rate_style(df_[cols_], ["over_1.5_HRR","over_2.5_HRR"]), use_container_width=True, hide_index=True)
+                st.success(f"✅ **{len(df_)} batters** at ≥80% on Over 1.5 H+R+RBI")
             else:
-                st.info("No H+R+RBI data available. Click Generate above.")
+                st.info(no_data_msg)
 
-        # ---- Pitcher K Props ----
+        # ---- Pitcher Ks ----
         with prop_tab_k:
-            st.markdown("#### ⚡ Starting Pitcher Strikeout Props — Last 5 Starts")
-            st.caption("Hit rates based on historical game logs. Always verify vs. sportsbook lines.")
-            k_list = daily_data.get("k_qualifiers", [])
-            if k_list:
-                df_k = pd.DataFrame(k_list)
-
-                # Color-code K/9
+            st.caption("Starting pitchers ranked by K rate — last 5 starts")
+            data = daily_data.get("k_qualifiers", [])
+            if data:
+                df_ = pd.DataFrame(data)
                 def k9_color(val):
                     try:
                         v = float(val)
                         if v >= 10: return "color:#00ff88"
                         if v >= 8:  return "color:#ffcc00"
                         return "color:#ff5555"
-                    except:
-                        return ""
-
-                def rate_color(val):
-                    try:
-                        v = float(val)
-                        if v >= 70: return "color:#00ff88"
-                        if v >= 50: return "color:#ffcc00"
-                        return "color:#aaaaaa"
-                    except:
-                        return ""
-
-                avail = [c for c in ["pitcher", "K/9", "avg_K", "over_3.5_K", "over_4.5_K", "over_5.5_K", "starts"] if c in df_k.columns]
-                styled_k = df_k[avail].style \
-                    .map(k9_color,   subset=["K/9"]       if "K/9"       in avail else []) \
-                    .map(rate_color, subset=["over_3.5_K"] if "over_3.5_K" in avail else []) \
-                    .map(rate_color, subset=["over_4.5_K"] if "over_4.5_K" in avail else []) \
-                    .map(rate_color, subset=["over_5.5_K"] if "over_5.5_K" in avail else []) \
-                    .format(precision=1)
-
-                st.dataframe(styled_k, use_container_width=True, hide_index=True)
-
-                # Highlight top K plays
-                top_k_plays = df_k[df_k["over_4.5_K"] >= 80].sort_values("over_4.5_K", ascending=False) if "over_4.5_K" in df_k.columns else pd.DataFrame()
-                if not top_k_plays.empty:
+                    except: return ""
+                cols_ = [c for c in ["pitcher","K/9","avg_K","over_3.5_K","over_4.5_K","over_5.5_K","starts"] if c in df_.columns]
+                rate_cols_ = [c for c in ["over_3.5_K","over_4.5_K","over_5.5_K"] if c in df_.columns]
+                styled_ = df_[cols_].style.map(k9_color, subset=["K/9"] if "K/9" in cols_ else [])
+                if rate_cols_:
+                    def _rc(v):
+                        try:
+                            f = float(v)
+                            return "color:#00ff88" if f>=80 else "color:#ffcc00" if f>=60 else "color:#aaaaaa"
+                        except: return ""
+                    styled_ = styled_.map(_rc, subset=rate_cols_)
+                st.dataframe(styled_.format(precision=1), use_container_width=True, hide_index=True)
+                top_k_ = df_[df_["over_4.5_K"] >= 80].sort_values("over_4.5_K", ascending=False) if "over_4.5_K" in df_.columns else pd.DataFrame()
+                if not top_k_.empty:
                     st.markdown("**🎯 Top K Plays (≥80% on Over 4.5 K):**")
-                    for _, row in top_k_plays.head(5).iterrows():
-                        k9_val = row.get("K/9", "?")
-                        avg_val = row.get("avg_K", "?")
-                        rate_val = row.get("over_4.5_K", "?")
+                    for _, row in top_k_.head(5).iterrows():
                         st.markdown(
                             f"<div style='background:#1e1e2e;border:1px solid #00ff88;border-radius:8px;"
-                            f"padding:8px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center'>"
+                            f"padding:8px 14px;margin-bottom:6px;display:flex;justify-content:space-between'>"
                             f"<span style='font-weight:700'>{row['pitcher']}</span>"
-                            f"<span style='color:#aaa;font-size:12px'>K/9: <b style='color:#fff'>{k9_val}</b> &nbsp;|&nbsp; "
-                            f"Avg K: <b style='color:#fff'>{avg_val}</b> &nbsp;|&nbsp; "
-                            f"Over 4.5: <b style='color:#00ff88'>{rate_val}%</b></span>"
-                            f"</div>",
-                            unsafe_allow_html=True
-                        )
+                            f"<span style='color:#aaa;font-size:12px'>K/9: <b style='color:#fff'>{row.get('K/9','?')}</b>"
+                            f" | Avg K: <b style='color:#fff'>{row.get('avg_K','?')}</b>"
+                            f" | Over 4.5: <b style='color:#00ff88'>{row.get('over_4.5_K','?')}%</b></span></div>",
+                            unsafe_allow_html=True)
             else:
-                st.info("No pitcher K data available. Click Generate above.")
+                st.info(no_data_msg)
+
+        # ---- Earned Runs ----
+        with prop_tab_er:
+            st.caption("Starting pitchers ranked by ER rate — last 5 starts")
+            data = daily_data.get("er_qualifiers", [])
+            if data:
+                df_ = pd.DataFrame(data)
+                cols_ = [c for c in ["pitcher","over_0.5_ER","over_1.5_ER","over_2.5_ER","starts"] if c in df_.columns]
+                st.dataframe(rate_style(df_[cols_], ["over_0.5_ER","over_1.5_ER","over_2.5_ER"]), use_container_width=True, hide_index=True)
+            else:
+                st.info(no_data_msg)
+
+        # ---- Walks Issued ----
+        with prop_tab_bb:
+            st.caption("Starting pitchers ranked by walks issued rate — last 5 starts")
+            data = daily_data.get("bb_qualifiers", [])
+            if data:
+                df_ = pd.DataFrame(data)
+                cols_ = [c for c in ["pitcher","over_0.5_BB","over_1.5_BB","over_2.5_BB","starts"] if c in df_.columns]
+                st.dataframe(rate_style(df_[cols_], ["over_0.5_BB","over_1.5_BB","over_2.5_BB"]), use_container_width=True, hide_index=True)
+            else:
+                st.info(no_data_msg)
+
+        # ---- Hits Allowed ----
+        with prop_tab_ha:
+            st.caption("Starting pitchers ranked by hits allowed rate — last 5 starts")
+            data = daily_data.get("ha_qualifiers", [])
+            if data:
+                df_ = pd.DataFrame(data)
+                cols_ = [c for c in ["pitcher","over_3.5_HA","over_4.5_HA","over_5.5_HA","starts"] if c in df_.columns]
+                st.dataframe(rate_style(df_[cols_], ["over_3.5_HA","over_4.5_HA","over_5.5_HA"]), use_container_width=True, hide_index=True)
+            else:
+                st.info(no_data_msg)
 
         # ---- Parlay Suggestions ----
         with prop_tab_parlay:
@@ -766,54 +840,47 @@ with tab_player:
                     game_daily_data = None
 
         if game_daily_data:
-            st.subheader("🔥 Today's Prop Hot Lists — This Game")
+            st.subheader("🔥 Prop Hot Lists — This Game")
             st.caption(f"Filtered for **{selected_game['display']}**")
-
-            col1, col2, col3 = st.columns(3)
             search_pattern = f"{selected_game['awayAbbrev']}|{selected_game['homeAbbrev']}"
 
-            with col1:
-                st.markdown("**Hits Hot List**")
-                hits_list = game_daily_data.get("hits_qualifiers", [])
-                if hits_list:
-                    df_h2 = pd.DataFrame(hits_list)
-                    df_game = df_h2[df_h2["player"].str.contains(search_pattern, na=False, case=False)].copy()
-                    if not df_game.empty:
-                        hit_cols = [c for c in ["player", "over_0.5_H", "over_1.5_H"] if c in df_game.columns]
-                        st.dataframe(df_game[hit_cols].head(10), use_container_width=True, hide_index=True)
-                    else:
-                        st.info("No hot hitters in this game.")
-                else:
+            def game_table(key, name_col, display_cols, sort_col=None):
+                raw = game_daily_data.get(key, [])
+                if not raw:
                     st.info("Generate props in Tab 1 first.")
+                    return
+                df_ = pd.DataFrame(raw)
+                df_ = df_[df_[name_col].str.contains(search_pattern, na=False, case=False)].copy()
+                if df_.empty:
+                    st.info(f"No qualifying players in this game.")
+                    return
+                show_cols = [c for c in display_cols if c in df_.columns]
+                if sort_col and sort_col in df_.columns:
+                    df_ = df_.sort_values(sort_col, ascending=False)
+                st.dataframe(df_[show_cols].reset_index(drop=True), use_container_width=True, hide_index=True)
 
-            with col2:
-                st.markdown("**Pitcher K Props**")
-                k_list2 = game_daily_data.get("k_qualifiers", [])
-                if k_list2:
-                    df_k2 = pd.DataFrame(k_list2)
-                    pitcher_col = "pitcher" if "pitcher" in df_k2.columns else "player"
-                    df_game_k = df_k2[df_k2[pitcher_col].str.contains(search_pattern, na=False, case=False)].copy()
-                    if not df_game_k.empty:
-                        k_cols = [c for c in [pitcher_col, "K/9", "avg_K", "over_3.5_K", "over_4.5_K"] if c in df_game_k.columns]
-                        st.dataframe(df_game_k[k_cols], use_container_width=True, hide_index=True)
-                    else:
-                        st.info("No K prop data for pitchers in this game.")
-                else:
-                    st.info("Generate props in Tab 1 first.")
-
-            with col3:
-                st.markdown("**H + R + RBI Hot List**")
-                hrr_list2 = game_daily_data.get("hrr_qualifiers", [])
-                if hrr_list2:
-                    df_hrr2 = pd.DataFrame(hrr_list2)
-                    df_game_hrr = df_hrr2[df_hrr2["player"].str.contains(search_pattern, na=False, case=False)].copy()
-                    if not df_game_hrr.empty:
-                        hrr_cols = [c for c in ["player", "over_1.5_HRR"] if c in df_game_hrr.columns]
-                        st.dataframe(df_game_hrr[hrr_cols].head(10), use_container_width=True, hide_index=True)
-                    else:
-                        st.info("No hot H+R+RBI in this game.")
-                else:
-                    st.info("Generate props in Tab 1 first.")
+            g_tab_h, g_tab_r, g_tab_rbi, g_tab_bk, g_tab_hrr, g_tab_pk, g_tab_er, g_tab_bb, g_tab_ha = st.tabs([
+                "🟢 Hits", "🏃 Runs", "💥 RBI", "🔴 Batter Ks", "🔥 H+R+RBI",
+                "⚡ Pitcher Ks", "💣 ER", "🚶 Walks", "🎯 HA",
+            ])
+            with g_tab_h:
+                game_table("hits_qualifiers",  "player",  ["player","over_0.5_H","over_1.5_H","games"], "over_0.5_H")
+            with g_tab_r:
+                game_table("runs_qualifiers",  "player",  ["player","over_0.5_R","games"], "over_0.5_R")
+            with g_tab_rbi:
+                game_table("rbi_qualifiers",   "player",  ["player","over_0.5_RBI","over_1.5_RBI","games"], "over_0.5_RBI")
+            with g_tab_bk:
+                game_table("batter_k_qualifiers","player",["player","over_0.5_K","over_1.5_K","games"], "over_0.5_K")
+            with g_tab_hrr:
+                game_table("hrr_qualifiers",   "player",  ["player","over_1.5_HRR","over_2.5_HRR","games"], "over_1.5_HRR")
+            with g_tab_pk:
+                game_table("k_qualifiers",     "pitcher", ["pitcher","K/9","avg_K","over_3.5_K","over_4.5_K","over_5.5_K","starts"], "over_4.5_K")
+            with g_tab_er:
+                game_table("er_qualifiers",    "pitcher", ["pitcher","over_0.5_ER","over_1.5_ER","over_2.5_ER","starts"], "over_1.5_ER")
+            with g_tab_bb:
+                game_table("bb_qualifiers",    "pitcher", ["pitcher","over_0.5_BB","over_1.5_BB","over_2.5_BB","starts"], "over_1.5_BB")
+            with g_tab_ha:
+                game_table("ha_qualifiers",    "pitcher", ["pitcher","over_3.5_HA","over_4.5_HA","over_5.5_HA","starts"], "over_4.5_HA")
         else:
             st.info("💡 Go to **Today's Parlay Suggestions** tab and click **Generate** to load prop hot lists.")
 
