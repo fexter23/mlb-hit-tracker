@@ -290,8 +290,8 @@ def score_batter_props(player_id: int, player_name: str, team_abbrev: str,
         r   = int(stt.get("runs", 0))
         rbi = int(stt.get("rbi", 0))
         k   = int(stt.get("strikeOuts", 0))
-        records.append({"H": h, "R": r, "RBI": rbi, "K": k, "HRR": h + r + rbi})
-    df = pd.DataFrame(records).head(10)
+        records.append({"date": s.get("date", ""), "H": h, "R": r, "RBI": rbi, "K": k, "HRR": h + r + rbi})
+    df = pd.DataFrame(records).sort_values("date", ascending=False).head(10).drop(columns=["date"])
     return {
         "player":       f"{player_name} ({team_abbrev})",
         "over_0.5_H":   round((df["H"]   > 0.5).mean() * 100, 1),
