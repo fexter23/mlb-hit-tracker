@@ -458,6 +458,63 @@ def detect_streak_slump(pdata: pd.DataFrame, stat_col: str, threshold: float):
     return "➖ Neutral", "➖", "#aaaaaa"
 
 
+def get_pitcher_leaderboard(games: list) -> tuple[pd.DataFrame, list]:
+    """
+    Extracts all starting pitchers from today's games.
+    Returns a tuple:
+      - pd.DataFrame: Ranked pitchers with valid numeric ERAs (sorted low-to-high)
+      - list: Pitchers who are TBD or lack an active season ERA string
+    """
+    ranked_pitchers = []
+    unranked_pitchers = []
+    
+    if not games:
+        return pd.DataFrame(), []
+
+    for game in games:
+        for side in ["away", "home"]:
+            p_name = game[f"{side}P"]
+            p_era_str = game[f"{side}PERA"]
+            team = game[f"{side}Abbrev"]
+            
+            opp_side = "home" if side == "away" else "away"
+            opp_team = game[f"{opp_side}Abbrev"]
+            matchup = f"@ {opp_team}" if side == "away" else f"vs {opp_team}"
+            
+            if p_name == "TBD" or p_era_str == "?.??":
+                unranked_pitchers.append({
+                    "Pitcher": p_name,
+                    "Team": team,
+                    "ERA": p_era_str,
+                    "Matchup": matchup
+                })
+            else:
+                try:
+                    ranked_pitchers.append({
+                        "Pitcher": p_name,
+                        "Team": team,
+                        "ERA": float(p_era_str),
+                        "Matchup": matchup
+                    })
+                except ValueError:
+                    unranked_pitchers.append({
+                        "Pitcher": p_name,
+                        "Team": team,
+                        "ERA": p_era_str,
+                        "Matchup": matchup
+                    })
+
+    if ranked_pitchers:
+        df = pd.DataFrame(ranked_pitchers)
+        df = df.sort_values(by="ERA", ascending=True).reset_index(drop=True)
+        df.index += 1
+        df = df.reset_index().rename(columns={"index": "Rank"})
+    else:
+        df = pd.DataFrame(columns=["Rank", "Pitcher", "Team", "ERA", "Matchup"])
+
+    return df, unranked_pitchers
+
+
 def compute_confidence_score(
     hit_rate: float,
     weighted_hit_rate: float,
@@ -823,6 +880,41 @@ with tab_player:
                 with col_thresh:
                     thresh_opts = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5] if not (is_pitcher and selected_stat == "Outs") else [12.5, 15.5, 17.5, 18.5]
                     threshold = st.selectbox("Threshold", options=thresh_opts, format_func=lambda x: f"{x:.1f}")
+
+    # --- DAILY STARTING PITCHER LEADERBOARD COMPONENT ---
+    if today_games:
+        st.subheader("🏆 Daily Starting Pitcher Leaderboard")
+        st.caption("All scheduled starters ranked from best (lowest ERA) to worst (highest ERA).")
+        
+        df_leaderboard, unranked_list = get_pitcher_leaderboard(today_games)
+        
+        if not df_leaderboard.empty:
+            def style_leaderboard(df_in):
+                def _color_era(val):
+                    try:
+                        v = float(val)
+                        if v <= 3.00: return "color:#00ff88; font-weight: bold;"
+                        if v >= 5.00: return "color:#ff5555;"
+                        return "color:#aaaaaa;"
+                    except:
+                        return ""
+                return df_in.style.map(_color_era, subset=["ERA"]).format({"ERA": "{:.2f}"})
+
+            st.dataframe(
+                style_leaderboard(df_leaderboard), 
+                use_container_width=True, 
+                hide_index=True
+            )
+        else:
+            st.info("No pitchers with active season stats found yet for today.")
+
+        if unranked_list:
+            with st.expander("📋 TBD / Unranked Starters"):
+                df_unranked = pd.DataFrame(unranked_list)
+                st.dataframe(df_unranked, use_container_width=True, hide_index=True)
+                
+        st.divider()
+    # --- END OF LEADERBOARD COMPONENT ---
 
     if selected_game:
         game_daily_data = st.session_state.get("live_props")
