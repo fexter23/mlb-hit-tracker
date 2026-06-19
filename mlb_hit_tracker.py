@@ -5,6 +5,7 @@ import datetime
 import plotly.express as px
 import json
 import os
+import re
 
 # ====================== DATA CONSTANTS ======================
 PARK_FACTORS = {
@@ -30,6 +31,7 @@ def get_pitcher_era(pitcher_id: int) -> str:
     if not pitcher_id:
         return "?.??"
     try:
+        # Keep track of current year via forced eastern context if required, default to local year
         year = datetime.datetime.now().year
         stats_url = f"https://statsapi.mlb.com/api/v1/people/{pitcher_id}/stats?stats=season&group=pitching&season={year}"
         s_resp = requests.get(stats_url, timeout=8)
@@ -48,11 +50,13 @@ def get_pitcher_era(pitcher_id: int) -> str:
 
 @st.cache_data(ttl=1800)
 def get_todays_games():
+    # Forced Timezone Alignment: Ensure games match the current date in Eastern Time (America/New_York)
     try:
         import pytz
         tz = pytz.timezone("America/New_York")
         today = datetime.datetime.now(tz).strftime("%Y-%m-%d")
     except ImportError:
+        # Fallback to standard offset math if pytz isn't present in environment
         today = (datetime.datetime.utcnow() - datetime.timedelta(hours=4)).strftime("%Y-%m-%d")
 
     url = f"https://statsapi.mlb.com/api/v1/schedule?sportId=1&date={today}&hydrate=team,probablePitcher"
@@ -130,14 +134,136 @@ def get_game_log(player_id: int, group: str):
         return []
 
 
-# ====================== HELPER FUNCTIONS ======================
-def calculate_total_bases(stt):
-    """Correct Total Bases: H + 2B + 2*3B + 3*HR"""
-    h = int(stt.get("hits", 0))
-    doubles = int(stt.get("doubles", 0))
-    triples = int(stt.get("triples", 0))
-    hr = int(stt.get("homeRuns", 0))
-    return h + doubles + (2 * triples) + (3 * hr)
+@st.cache_data(ttl=3600)
+def get_batter_vs_pitcher(batter_id: int, pitcher_id: int, season: int):
+    if not pitcher_id:
+        return None
+    url = f"https://statsapi.mlb.com/api/v1/people/{batter_id}/stats?stats=vsPlayer&group=hitting&opposingPlayerId={pitcher_id}&season={season}"
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        stats_list = data.get("stats", [])
+        if stats_list:
+            splits = stats_list[0].get("splits", [])
+            if splits:
+                stat = splits[0].get("stat", {})
+                return {
+                    "atBats": stat.get("atBats", 0),
+                    "hits": stat.get("hits", 0),
+                    "avg": stat.get("avg", ".000"),
+                    "homeRuns": stat.get("homeRuns", 0),
+                    "rbi": stat.get("rbi", 0),
+                    "strikeOuts": stat.get("strikeOuts", 0),
+                    "baseOnBalls": stat.get("baseOnBalls", 0),
+                    "ops": stat.get("ops", ".000"),
+                }
+        return None
+    except Exception:
+        return None
+
+
+@st.cache_data(ttl=3600)
+def get_batter_vs_pitcher_career(batter_id: int, pitcher_id: int):
+    if not pitcher_id:
+        return None
+    url = f"https://statsapi.mlb.com/api/v1/people/{batter_id}/stats?stats=vsPlayer&group=hitting&opposingPlayerId={pitcher_id}"
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        stats_list = data.get("stats", [])
+        if stats_list:
+            splits = stats_list[0].get("splits", [])
+            if splits:
+                stat = splits[0].get("stat", {})
+                return {
+                    "atBats": stat.get("atBats", 0),
+                    "hits": stat.get("hits", 0),
+                    "avg": stat.get("avg", ".000"),
+                    "homeRuns": stat.get("homeRuns", 0),
+                    "rbi": stat.get("rbi", 0),
+                    "strikeOuts": stat.get("strikeOuts", 0),
+                    "baseOnBalls": stat.get("baseOnBalls", 0),
+                    "ops": stat.get("ops", ".000"),
+                }
+        return None
+    except Exception:
+        return None
+
+
+@st.cache_data(ttl=3600)
+def get_batter_platoon_splits(player_id: int):
+    year = datetime.datetime.now().year
+    url = f"https://statsapi.mlb.com/api/v1/people/{player_id}/stats?stats=statSplits&group=hitting&season={year}&sitCodes=vl,vr"
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        splits = resp.json().get("stats", [{}])[0].get("splits", [])
+        result = {}
+        for s in splits:
+            code = s.get("split", {}).get("code", "")
+            st_data = s.get("stat", {})
+            if code in ("vl", "vr"):
+                result[code] = {
+                    "avg":       st_data.get("avg", ".000"),
+                    "ops":       st_data.get("ops", ".000"),
+                    "atBats":    st_data.get("atBats", 0),
+                    "hits":      st_data.get("hits", 0),
+                    "homeRuns":  st_data.get("homeRuns", 0),
+                    "strikeOuts":st_data.get("strikeOuts", 0),
+                    "obp":       st_data.get("obp", ".000"),
+                    "slg":       st_data.get("slg", ".000"),
+                }
+        return result
+    except Exception:
+        return {}
+
+
+@st.cache_data(ttl=3600)
+def get_pitcher_hand(pitcher_id: int) -> str:
+    if not pitcher_id:
+        return ""
+    try:
+        url = f"https://statsapi.mlb.com/api/v1/people/{pitcher_id}"
+        resp = requests.get(url, timeout=8)
+        resp.raise_for_status()
+        people = resp.json().get("people", [])
+        if people:
+            return people[0].get("pitchHand", {}).get("code", "")
+        return ""
+    except Exception:
+        return ""
+
+
+@st.cache_data(ttl=3600)
+def get_pitcher_recent_form(pitcher_id: int, num_starts: int = 4):
+    if not pitcher_id:
+        return []
+    year = datetime.datetime.now().year
+    url = f"https://statsapi.mlb.com/api/v1/people/{pitcher_id}/stats?stats=gameLog&group=pitching&season={year}"
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.raise_for_status()
+        splits = resp.json().get("stats", [{}])[0].get("splits", [])
+        splits_sorted = sorted(splits, key=lambda x: x.get("date", ""), reverse=True)
+        records = []
+        for s in splits_sorted[:num_starts]:
+            st_data = s.get("stat", {})
+            ip = st_data.get("inningsPitched", "0.0")
+            records.append({
+                "Date":     s.get("date", ""),
+                "Opp":      s.get("opponent", {}).get("abbreviation", "?"),
+                "IP":       ip,
+                "H":        int(st_data.get("hits", 0)),
+                "ER":       int(st_data.get("earnedRuns", 0)),
+                "K":        int(st_data.get("strikeOuts", 0)),
+                "BB":       int(st_data.get("baseOnBalls", 0)),
+                "ERA":      st_data.get("era", "?.??"),
+            })
+        return records
+    except Exception:
+        return []
 
 
 def calculate_outs(ip_str):
@@ -151,6 +277,7 @@ def calculate_outs(ip_str):
 
 
 # ====================== LIVE PROP SCORING ======================
+
 def score_batter_props(player_id: int, player_name: str, team_abbrev: str,
                        opp_era: str, park_factor: int) -> dict | None:
     logs = get_game_log(player_id, "hitting")
@@ -163,16 +290,7 @@ def score_batter_props(player_id: int, player_name: str, team_abbrev: str,
         r   = int(stt.get("runs", 0))
         rbi = int(stt.get("rbi", 0))
         k   = int(stt.get("strikeOuts", 0))
-        tb  = calculate_total_bases(stt)
-        records.append({
-            "date": s.get("date", ""), 
-            "H": h, 
-            "R": r, 
-            "RBI": rbi, 
-            "K": k, 
-            "HRR": h + r + rbi,
-            "TB": tb
-        })
+        records.append({"date": s.get("date", ""), "H": h, "R": r, "RBI": rbi, "K": k, "HRR": h + r + rbi})
     df = pd.DataFrame(records).sort_values("date", ascending=False).head(10).drop(columns=["date"])
     return {
         "player":       f"{player_name} ({team_abbrev})",
@@ -185,8 +303,6 @@ def score_batter_props(player_id: int, player_name: str, team_abbrev: str,
         "over_1.5_K":   round((df["K"]   > 1.5).mean() * 100, 1),
         "over_1.5_HRR": round((df["HRR"] > 1.5).mean() * 100, 1),
         "over_2.5_HRR": round((df["HRR"] > 2.5).mean() * 100, 1),
-        "over_2.5_TB":  round((df["TB"]  > 2.5).mean() * 100, 1),
-        "over_3.5_TB":  round((df["TB"]  > 3.5).mean() * 100, 1),
         "games":        len(df),
     }
 
@@ -276,26 +392,17 @@ def generate_live_props(games: list, progress_bar=None) -> dict:
     def pitcher_sorted(col):
         return sorted(pitcher_results, key=lambda x: x.get(col, 0), reverse=True)
 
-    # Parlay suggestions with TB included
     parlay_suggestions = []
     top_hits = batter_hot("over_0.5_H")[:6]
-    top_tb   = batter_hot("over_2.5_TB")[:4]
     top_k    = [r for r in pitcher_sorted("over_4.5_K") if r.get("over_4.5_K", 0) >= 80][:4]
-
     for i in range(0, min(len(top_hits), 6), 3):
         legs_pool = top_hits[i:i+3]
         if len(legs_pool) < 2:
             break
         legs = [{"player": r["player"], "prop": "Over 0.5 Hits", "hit_rate": r["over_0.5_H"]} for r in legs_pool]
-        
-        # Mix in TB or K props
-        if top_tb and i % 2 == 0:
-            tb_leg = top_tb[i // 3 % len(top_tb)]
-            legs[-1] = {"player": tb_leg["player"], "prop": "Over 2.5 TB", "hit_rate": tb_leg["over_2.5_TB"]}
-        elif top_k:
-            k_leg = top_k[i // 3 % len(top_k)]
+        if top_k:
+            k_leg = top_k[i // 3] if (i // 3) < len(top_k) else top_k[0]
             legs[-1] = {"player": k_leg["pitcher"], "prop": "Over 4.5 Ks", "hit_rate": k_leg["over_4.5_K"]}
-        
         parlay_suggestions.append({"game": "Today's Games", "legs": legs})
 
     if progress_bar:
@@ -318,7 +425,6 @@ def generate_live_props(games: list, progress_bar=None) -> dict:
         "batter_k_qualifiers":batter_hot("over_0.5_K"),
         "hrr_qualifiers":     batter_hot("over_1.5_HRR"),
         "hrr25_qualifiers":   batter_hot("over_2.5_HRR"),
-        "tb_qualifiers":      batter_hot("over_2.5_TB"),
         "k_qualifiers":       pitcher_sorted("over_4.5_K"),
         "er_qualifiers":      pitcher_sorted("over_1.5_ER"),
         "bb_qualifiers":      pitcher_sorted("over_1.5_BB"),
@@ -328,6 +434,7 @@ def generate_live_props(games: list, progress_bar=None) -> dict:
 
 
 # ====================== ANALYTICS HELPERS ======================
+
 def compute_weighted_hit_rate(pdata: pd.DataFrame, stat_col: str, threshold: float) -> float:
     n = len(pdata)
     if n == 0:
@@ -352,6 +459,12 @@ def detect_streak_slump(pdata: pd.DataFrame, stat_col: str, threshold: float):
 
 
 def get_pitcher_leaderboard(games: list) -> tuple[pd.DataFrame, list]:
+    """
+    Extracts all starting pitchers from today's games.
+    Returns a tuple:
+      - pd.DataFrame: Ranked pitchers with valid numeric ERAs (sorted low-to-high)
+      - list: Pitchers who are TBD or lack an active season ERA string
+    """
     ranked_pitchers = []
     unranked_pitchers = []
     
@@ -545,11 +658,11 @@ with tab_parlays:
         no_data_msg = "No data yet — click **⚡ Generate** above."
 
         (prop_tab_hits, prop_tab_runs, prop_tab_rbi,
-         prop_tab_bk, prop_tab_hrr, prop_tab_tb,
-         prop_tab_k, prop_tab_er, prop_tab_bb, prop_tab_ha,
+         prop_tab_bk,   prop_tab_hrr,
+         prop_tab_k,    prop_tab_er, prop_tab_bb, prop_tab_ha,
          prop_tab_parlay) = st.tabs([
             "🟢 Hits", "🏃 Runs", "💥 RBI",
-            "🔴 Batter Ks", "🔥 H+R+RBI", "⚾ Total Bases",
+            "🔴 Batter Ks", "🔥 H+R+RBI",
             "⚡ Pitcher Ks", "💣 Earned Runs", "🚶 Walks", "🎯 Hits Allowed",
             "🎯 Parlays",
         ])
@@ -606,17 +719,6 @@ with tab_parlays:
                 cols_ = [c for c in ["player", "over_1.5_HRR", "over_2.5_HRR", "games"] if c in df_.columns]
                 st.dataframe(rate_style(df_[cols_], ["over_1.5_HRR","over_2.5_HRR"]), use_container_width=True, hide_index=True)
                 st.success(f"✅ **{len(df_)} batters** at ≥80% on Over 1.5 H+R+RBI")
-            else:
-                st.info(no_data_msg)
-
-        with prop_tab_tb:
-            st.caption("Batters with strong Total Bases rates — last 10 games")
-            data = daily_data.get("tb_qualifiers", [])
-            if data:
-                df_ = pd.DataFrame(data)
-                cols_ = [c for c in ["player", "over_2.5_TB", "over_3.5_TB", "games"] if c in df_.columns]
-                st.dataframe(rate_style(df_[cols_], ["over_2.5_TB","over_3.5_TB"]), use_container_width=True, hide_index=True)
-                st.success(f"✅ **{len(df_)} batters** at ≥80% on Over 2.5 Total Bases")
             else:
                 st.info(no_data_msg)
 
@@ -692,7 +794,7 @@ with tab_parlays:
             suggestions = daily_data.get("parlay_suggestions", [])
             if suggestions:
                 st.markdown("#### 🎯 Suggested 3-Leg Parlays")
-                st.caption("Built from top hit-rate batters + TB + K props. Always verify lines.")
+                st.caption("Built from top hit-rate batters + best K props. Always verify lines.")
                 for i in range(0, len(suggestions), 2):
                     cols = st.columns(2)
                     for idx, col in enumerate(cols):
@@ -728,8 +830,6 @@ with tab_player:
         game_options = [g["display"] for g in today_games]
         selected_display = st.selectbox("Select a game", options=game_options, key="game_select")
         selected_game = next((g for g in today_games if g["display"] == selected_display), None)
-
-        show_leaderboard = st.checkbox("Show Daily Starting Pitcher Leaderboard", value=True)
 
         if selected_game:
             pf = PARK_FACTORS.get(selected_game["homeAbbrev"], 100)
@@ -775,14 +875,14 @@ with tab_player:
 
                 col_stat, col_thresh = st.columns(2)
                 with col_stat:
-                    stat_options = ["Strikeouts", "Earned Runs", "Outs", "Hits Allowed", "Walks Issued"] if is_pitcher else ["Hits", "Runs", "RBI", "H+R+RBI", "Total Bases", "Strikeouts"]
+                    stat_options = ["Strikeouts", "Earned Runs", "Outs", "Hits Allowed", "Walks Issued"] if is_pitcher else ["Hits", "Runs", "RBI", "H+R+RBI", "Strikeouts"]
                     selected_stat = st.selectbox("Stat", options=stat_options, key="stat_select")
                 with col_thresh:
-                    thresh_opts = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5] if not (is_pitcher and selected_stat == "Outs") else [12.5, 15.5, 17.5, 18.5]
+                    thresh_opts = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5] if not (is_pitcher and selected_stat == "Outs") else [12.5, 15.5, 17.5, 18.5]
                     threshold = st.selectbox("Threshold", options=thresh_opts, format_func=lambda x: f"{x:.1f}")
 
-    # --- DAILY STARTING PITCHER LEADERBOARD ---
-    if today_games and show_leaderboard:
+    # --- DAILY STARTING PITCHER LEADERBOARD COMPONENT ---
+    if today_games:
         st.subheader("🏆 Daily Starting Pitcher Leaderboard")
         st.caption("All scheduled starters ranked from best (lowest ERA) to worst (highest ERA).")
         
@@ -814,6 +914,7 @@ with tab_player:
                 st.dataframe(df_unranked, use_container_width=True, hide_index=True)
                 
         st.divider()
+    # --- END OF LEADERBOARD COMPONENT ---
 
     if selected_game:
         game_daily_data = st.session_state.get("live_props")
@@ -846,8 +947,8 @@ with tab_player:
                     df_ = df_.sort_values(sort_col, ascending=False)
                 st.dataframe(df_[show_cols].reset_index(drop=True), use_container_width=True, hide_index=True)
 
-            g_tab_h, g_tab_r, g_tab_rbi, g_tab_bk, g_tab_hrr, g_tab_tb, g_tab_pk, g_tab_er, g_tab_bb, g_tab_ha = st.tabs([
-                "🟢 Hits", "🏃 Runs", "💥 RBI", "🔴 Batter Ks", "🔥 H+R+RBI", "⚾ Total Bases",
+            g_tab_h, g_tab_r, g_tab_rbi, g_tab_bk, g_tab_hrr, g_tab_pk, g_tab_er, g_tab_bb, g_tab_ha = st.tabs([
+                "🟢 Hits", "🏃 Runs", "💥 RBI", "🔴 Batter Ks", "🔥 H+R+RBI",
                 "⚡ Pitcher Ks", "💣 ER", "🚶 Walks", "🎯 HA",
             ])
             with g_tab_h:
@@ -860,8 +961,6 @@ with tab_player:
                 game_table("batter_k_qualifiers","player",["player","over_0.5_K","over_1.5_K","games"], "over_0.5_K")
             with g_tab_hrr:
                 game_table("hrr_qualifiers",   "player",  ["player","over_1.5_HRR","over_2.5_HRR","games"], "over_1.5_HRR")
-            with g_tab_tb:
-                game_table("tb_qualifiers",    "player",  ["player","over_2.5_TB","over_3.5_TB","games"], "over_2.5_TB")
             with g_tab_pk:
                 game_table("k_qualifiers",     "pitcher", ["pitcher","K/9","avg_K","over_3.5_K","over_4.5_K","over_5.5_K","starts"], "over_4.5_K")
             with g_tab_er:
@@ -898,16 +997,8 @@ with tab_player:
                     r = int(stt.get("runs", 0))
                     rbi = int(stt.get("rbi", 0))
                     ab = int(stt.get("atBats", 0))
-                    tb = calculate_total_bases(stt)
-                    rec.update({
-                        "AB": ab, 
-                        "H": h, 
-                        "R": r, 
-                        "RBI": rbi, 
-                        "H+R+RBI": h + r + rbi,
-                        "TB": tb,
-                        "K": int(stt.get("strikeOuts", 0))
-                    })
+                    rec.update({"AB": ab, "H": h, "R": r, "RBI": rbi, "H+R+RBI": h + r + rbi, 
+                              "K": int(stt.get("strikeOuts", 0))})
                 records.append(rec)
             
             df = pd.DataFrame(records).sort_values("Date", ascending=False)
@@ -916,7 +1007,6 @@ with tab_player:
                 "Runs": "R", 
                 "RBI": "RBI", 
                 "H+R+RBI": "H+R+RBI",
-                "Total Bases": "TB",
                 "Strikeouts": "K", 
                 "Earned Runs": "ER", 
                 "Outs": "Outs", 
@@ -935,20 +1025,151 @@ with tab_player:
                 platoon_splits, pitcher_hand = {}, ""
                 if not is_pitcher and opp_pid:
                     current_year = datetime.datetime.now().year
-                    bvp_season = get_batter_vs_pitcher(selected_player["id"], opp_pid, current_year)  # Note: this function not fully defined in original but kept for compatibility
+                    bvp_season = get_batter_vs_pitcher(selected_player["id"], opp_pid, current_year)
                     bvp_career = get_batter_vs_pitcher_career(selected_player["id"], opp_pid)
-                    # platoon and hand functions omitted for brevity - add back if needed
+                    platoon_splits = get_batter_platoon_splits(selected_player["id"])
+                    pitcher_hand = get_pitcher_hand(opp_pid)
 
                 confidence, conf_breakdown = compute_confidence_score(
                     hit_rate, weighted_hr, pf, opp_era, bvp_season, bvp_career,
                     streak_label, platoon_splits, pitcher_hand
                 )
 
-                # ... (rest of the player analysis UI remains the same as before)
-                # For space, the full detailed UI (charts, metrics, etc.) is unchanged from previous versions
+                conf_color = "#00ff88" if confidence >= 70 else "#ffcc00" if confidence >= 50 else "#ff5555"
+                conf_label = "High" if confidence >= 70 else "Medium" if confidence >= 50 else "Low"
+                st.markdown(
+                    f"""<div style="display:flex;gap:12px;align-items:center;margin-bottom:8px;">
+                        <div style="background:#1e1e2e;border:1px solid {conf_color};border-radius:10px;padding:8px 18px;text-align:center;">
+                            <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px;">Confidence</div>
+                            <div style="font-size:28px;font-weight:700;color:{conf_color};">{confidence}</div>
+                            <div style="font-size:12px;color:{conf_color};">{conf_label}</div>
+                        </div>
+                        <div style="background:#1e1e2e;border:1px solid {streak_color};border-radius:10px;padding:8px 18px;text-align:center;">
+                            <div style="font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:1px;">Last 3 Games</div>
+                            <div style="font-size:28px;">{streak_emoji}</div>
+                            <div style="font-size:12px;color:{streak_color};">{streak_label}</div>
+                        </div>
+                    </div>""",
+                    unsafe_allow_html=True,
+                )
 
-                st.dataframe(df.head(15), use_container_width=True, hide_index=True)
-            else:
-                st.info("No game logs found for this season.")
+                c1, c2 = st.columns([3, 2])
+                with c1:
+                    st.subheader(f"🎯 {hit_rate:.0f}% Over {threshold} (Last 10 Games)")
+                    chart_data = pdata.sort_values("Date", ascending=False)
+                    bar_colors = ["#00ff88" if v > threshold else "#ff5555" for v in chart_data[stat_col]]
+                    fig = px.bar(chart_data, x="Date", y=stat_col, text_auto=True, height=380,
+                                title=f"{selected_player['name']} - {selected_stat} Trend")
+                    fig.update_traces(marker_color=bar_colors)
+                    fig.add_hline(y=threshold, line_dash="dash", line_color="cyan",
+                                  annotation_text=f"Line {threshold}", annotation_position="top right")
+                    st.plotly_chart(fig, use_container_width=True)
+
+                    hr_col1, hr_col2 = st.columns(2)
+                    with hr_col1:
+                        st.metric("Raw Hit Rate (last 10)", f"{hit_rate:.0f}%")
+                    with hr_col2:
+                        delta = round(weighted_hr - hit_rate, 1)
+                        st.metric("Weighted Hit Rate", f"{weighted_hr:.0f}%",
+                                  delta=f"{delta:+.1f}%")
+
+                with c2:
+                    st.write("#### Matchup Quality")
+                    mq1, mq2 = st.columns(2)
+                    with mq1:
+                        st.metric("Park Factor", pf, delta=round(pf-100, 1))
+                    with mq2:
+                        st.metric("Opp. ERA", opp_era)
+
+                    if not is_pitcher and opp_pid:
+                        st.caption(f"**vs {opp_starter}**")
+                        bvp1, bvp2 = st.columns(2)
+                        with bvp1:
+                            if bvp_season and bvp_season["atBats"] > 0:
+                                st.metric("Season AVG", bvp_season["avg"], help=f"{bvp_season['hits']}/{bvp_season['atBats']} • HR: {bvp_season['homeRuns']}")
+                            else:
+                                st.metric("Season AVG", "—")
+                        with bvp2:
+                            if bvp_career and bvp_career["atBats"] > 0:
+                                st.metric("Career AVG", bvp_career["avg"], help=f"{bvp_career['hits']}/{bvp_career['atBats']} • HR: {bvp_career['homeRuns']}")
+                            else:
+                                st.metric("Career AVG", "—")
+
+                        if platoon_splits:
+                            hand_label = {"L": "LHP", "R": "RHP"}.get(pitcher_hand, "")
+                            st.caption(f"**Platoon Splits** {'— facing ' + hand_label if hand_label else ''}")
+                            pl1, pl2 = st.columns(2)
+                            for col, code, label in [(pl1, "vr", "vs RHP"), (pl2, "vl", "vs LHP")]:
+                                with col:
+                                    d = platoon_splits.get(code)
+                                    if d and d["atBats"] > 0:
+                                        highlight = (pitcher_hand == "R" and code == "vr") or (pitcher_hand == "L" and code == "vl")
+                                        border = "border:1px solid #00ff88;" if highlight else ""
+                                        st.markdown(
+                                            f"<div style='background:#1e1e2e;border-radius:8px;padding:6px 8px;{border}'>"
+                                            f"<div style='font-size:10px;color:#aaa'>{label} ({d['atBats']} AB)</div>"
+                                            f"<div style='font-size:15px;font-weight:700'>{d['avg']}</div>"
+                                            f"<div style='font-size:10px;color:#aaa'>OPS {d['ops']}</div>"
+                                            f"</div>",
+                                            unsafe_allow_html=True
+                                        )
+
+                    if opp_pid:
+                        pitcher_form = get_pitcher_recent_form(opp_pid, num_starts=4)
+                        if pitcher_form:
+                            st.caption(f"**{opp_starter} — Last {len(pitcher_form)} Starts**")
+                            form_df = pd.DataFrame(pitcher_form)
+                            
+                            def er_color(val):
+                                if pd.isna(val):
+                                    return ""
+                                try:
+                                    v = float(val)
+                                    if v <= 1: return "color:#00ff88"
+                                    if v <= 3: return "color:#ffcc00"
+                                    return "color:#ff5555"
+                                except:
+                                    return ""
+                            
+                            styled = (form_df.style
+                                .map(lambda v: er_color(v), subset=["ER"])
+                                .format(precision=0)
+                            )
+                            
+                            st.dataframe(styled, use_container_width=True, hide_index=True)
+
+                            if len(pitcher_form) >= 2:
+                                recent_er = sum(r["ER"] for r in pitcher_form[:2])
+                                older_er = sum(r["ER"] for r in pitcher_form[2:]) / max(len(pitcher_form) - 2, 1)
+                                avg_recent = recent_er / 2
+                                if avg_recent < older_er - 0.5:
+                                    st.success("📉 Pitcher trending better recently")
+                                elif avg_recent > older_er + 0.5:
+                                    st.warning("📈 Pitcher trending worse recently")
+
+                    with st.expander("📊 Confidence Breakdown"):
+                        max_pts_map = {
+                            "Hit Rate (raw)": 20, "Hit Rate (weighted)": 20,
+                            "Park Factor": 15, "Opp. ERA": 15,
+                            "BvP History": 10, "Streak/Slump": 10, "Platoon Split": 10
+                        }
+                        for component, pts in conf_breakdown.items():
+                            max_pts = max_pts_map.get(component, 10)
+                            pct = pts / max_pts
+                            bar_w = int(pct * 100)
+                            bar_c = "#00ff88" if pct >= 0.7 else "#ffcc00" if pct >= 0.4 else "#ff5555"
+                            st.markdown(
+                                f"<div style='margin-bottom:6px'>"
+                                f"<div style='display:flex;justify-content:space-between;font-size:12px'>"
+                                f"<span>{component}</span><span style='color:{bar_c}'>{pts}/{max_pts}</span></div>"
+                                f"<div style='background:#333;border-radius:4px;height:6px'>"
+                                f"<div style='background:{bar_c};width:{bar_w}%;height:6px;border-radius:4px'></div>"
+                                f"</div></div>",
+                                unsafe_allow_html=True
+                            )
+
+            st.dataframe(df.head(15), use_container_width=True, hide_index=True)
+        else:
+            st.info("No game logs found for this season.")
     elif selected_game:
         st.info("👈 Select a player from the sidebar to view detailed analytics.")
