@@ -1,8 +1,81 @@
 {
-  "date": "2026-07-14",
-  "generated_at": "2026-07-14T08:02:54.082090",
-  "hits_qualifiers": [],
-  "strikeouts_qualifiers": [],
+  "date": "2026-07-16",
+  "generated_at": "2026-07-16T08:11:49.243539",
+  "hits_qualifiers": [
+    {
+      "player": "Brett Baty (NYM)",
+      "over_0.5_H": 80.0,
+      "over_1.5_H": 20.0,
+      "over_0.5_K": 70.0,
+      "over_1.5_K": 30.0,
+      "over_1.5_HRR": 50.0,
+      "games_considered": 10,
+      "player_id": 683146
+    },
+    {
+      "player": "Justin Crawford (PHI)",
+      "over_0.5_H": 80.0,
+      "over_1.5_H": 40.0,
+      "over_0.5_K": 50.0,
+      "over_1.5_K": 0.0,
+      "over_1.5_HRR": 60.0,
+      "games_considered": 10,
+      "player_id": 702222
+    }
+  ],
+  "strikeouts_qualifiers": [
+    {
+      "player": "Brandon Marsh (PHI)",
+      "over_0.5_H": 40.0,
+      "over_1.5_H": 10.0,
+      "over_0.5_K": 80.0,
+      "over_1.5_K": 20.0,
+      "over_1.5_HRR": 10.0,
+      "games_considered": 10,
+      "player_id": 669016
+    },
+    {
+      "player": "Kyle Schwarber (PHI)",
+      "over_0.5_H": 60.0,
+      "over_1.5_H": 30.0,
+      "over_0.5_K": 90.0,
+      "over_1.5_K": 50.0,
+      "over_1.5_HRR": 40.0,
+      "games_considered": 10,
+      "player_id": 656941
+    }
+  ],
   "hrr_qualifiers": [],
-  "parlay_suggestions": []
+  "parlay_suggestions": [
+    {
+      "game": "New York Mets @ Philadelphia Phillies",
+      "avg_leg_hit_rate": 82.5,
+      "legs": [
+        {
+          "player": "Kyle Schwarber (PHI)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 90.0,
+          "games_considered": 10
+        },
+        {
+          "player": "Brett Baty (NYM)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 80.0,
+          "games_considered": 10
+        },
+        {
+          "player": "Justin Crawford (PHI)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 80.0,
+          "games_considered": 10
+        },
+        {
+          "player": "Brandon Marsh (PHI)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 80.0,
+          "games_considered": 10
+        }
+      ]
+    }
+  ]
 }
