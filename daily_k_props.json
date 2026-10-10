@@ -1,27 +1,7 @@
 {
-  "date": "2026-10-08",
-  "generated_at": "2026-10-08T12:52:27.421557",
+  "date": "2026-10-10",
+  "generated_at": "2026-10-10T11:58:13.178314",
   "hits_qualifiers": [
-    {
-      "player": "Brayan Rocchio (CLE)",
-      "over_0.5_H": 80.0,
-      "over_1.5_H": 30.0,
-      "over_0.5_K": 40.0,
-      "over_1.5_K": 0.0,
-      "over_1.5_HRR": 50.0,
-      "games_considered": 10,
-      "player_id": 677587
-    },
-    {
-      "player": "Jo Adell (CLE)",
-      "over_0.5_H": 80.0,
-      "over_1.5_H": 20.0,
-      "over_0.5_K": 60.0,
-      "over_1.5_K": 20.0,
-      "over_1.5_HRR": 60.0,
-      "games_considered": 10,
-      "player_id": 666176
-    },
     {
       "player": "Brenton Doyle (CWS)",
       "over_0.5_H": 80.0,
@@ -41,6 +21,26 @@
       "over_1.5_HRR": 70.0,
       "games_considered": 10,
       "player_id": 805367
+    },
+    {
+      "player": "Brayan Rocchio (CLE)",
+      "over_0.5_H": 80.0,
+      "over_1.5_H": 30.0,
+      "over_0.5_K": 40.0,
+      "over_1.5_K": 0.0,
+      "over_1.5_HRR": 50.0,
+      "games_considered": 10,
+      "player_id": 677587
+    },
+    {
+      "player": "Jo Adell (CLE)",
+      "over_0.5_H": 80.0,
+      "over_1.5_H": 20.0,
+      "over_0.5_K": 60.0,
+      "over_1.5_K": 20.0,
+      "over_1.5_HRR": 60.0,
+      "games_considered": 10,
+      "player_id": 666176
     }
   ],
   "strikeouts_qualifiers": [
@@ -78,7 +78,7 @@
   "hrr_qualifiers": [],
   "parlay_suggestions": [
     {
-      "game": "Cleveland Guardians @ Chicago White Sox",
+      "game": "Chicago White Sox @ Cleveland Guardians",
       "avg_leg_hit_rate": 87.5,
       "legs": [
         {
@@ -94,13 +94,13 @@
           "games_considered": 10
         },
         {
-          "player": "Brayan Rocchio (CLE)",
+          "player": "Brenton Doyle (CWS)",
           "prop": "Over 0.5 Hits",
           "hit_rate": 80.0,
           "games_considered": 10
         },
         {
-          "player": "Jo Adell (CLE)",
+          "player": "Chase Meidroth (CWS)",
           "prop": "Over 0.5 Hits",
           "hit_rate": 80.0,
           "games_considered": 10
