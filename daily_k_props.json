@@ -1,88 +1,159 @@
 {
-  "date": "2026-10-13",
-  "generated_at": "2026-10-13T13:37:59.377637",
+  "date": "2026-10-14",
+  "generated_at": "2026-10-14T11:16:03.785654",
   "hits_qualifiers": [
     {
-      "player": "Brayan Rocchio (CLE)",
+      "player": "Brice Turang (MIL)",
       "over_0.5_H": 80.0,
       "over_1.5_H": 30.0,
-      "over_0.5_K": 40.0,
-      "over_1.5_K": 0.0,
+      "over_0.5_K": 70.0,
+      "over_1.5_K": 60.0,
       "over_1.5_HRR": 50.0,
       "games_considered": 10,
-      "player_id": 677587
+      "player_id": 668930
     },
     {
-      "player": "Jo Adell (CLE)",
-      "over_0.5_H": 80.0,
+      "player": "Joey Ortiz (MIL)",
+      "over_0.5_H": 90.0,
       "over_1.5_H": 20.0,
       "over_0.5_K": 60.0,
-      "over_1.5_K": 20.0,
-      "over_1.5_HRR": 60.0,
+      "over_1.5_K": 40.0,
+      "over_1.5_HRR": 80.0,
       "games_considered": 10,
-      "player_id": 666176
+      "player_id": 687401
     },
     {
-      "player": "Chandler Simpson (TB)",
-      "over_0.5_H": 80.0,
-      "over_1.5_H": 40.0,
-      "over_0.5_K": 20.0,
-      "over_1.5_K": 0.0,
+      "player": "William Contreras (MIL)",
+      "over_0.5_H": 90.0,
+      "over_1.5_H": 0.0,
+      "over_0.5_K": 60.0,
+      "over_1.5_K": 10.0,
       "over_1.5_HRR": 60.0,
       "games_considered": 10,
-      "player_id": 802415
+      "player_id": 661388
+    },
+    {
+      "player": "Teoscar Hernández (LAD)",
+      "over_0.5_H": 80.0,
+      "over_1.5_H": 30.0,
+      "over_0.5_K": 90.0,
+      "over_1.5_K": 30.0,
+      "over_1.5_HRR": 70.0,
+      "games_considered": 10,
+      "player_id": 606192
+    },
+    {
+      "player": "Will Smith (LAD)",
+      "over_0.5_H": 80.0,
+      "over_1.5_H": 30.0,
+      "over_0.5_K": 60.0,
+      "over_1.5_K": 10.0,
+      "over_1.5_HRR": 70.0,
+      "games_considered": 10,
+      "player_id": 669257
     }
   ],
   "strikeouts_qualifiers": [
     {
-      "player": "Jonathan Aranda (TB)",
-      "over_0.5_H": 70.0,
+      "player": "Christian Yelich (MIL)",
+      "over_0.5_H": 60.0,
       "over_1.5_H": 0.0,
-      "over_0.5_K": 90.0,
-      "over_1.5_K": 60.0,
-      "over_1.5_HRR": 30.0,
+      "over_0.5_K": 80.0,
+      "over_1.5_K": 40.0,
+      "over_1.5_HRR": 60.0,
       "games_considered": 10,
-      "player_id": 666018
+      "player_id": 592885
     },
     {
-      "player": "Jonny DeLuca (TB)",
-      "over_0.5_H": 70.0,
-      "over_1.5_H": 20.0,
+      "player": "Garrett Mitchell (MIL)",
+      "over_0.5_H": 60.0,
+      "over_1.5_H": 0.0,
       "over_0.5_K": 80.0,
-      "over_1.5_K": 30.0,
-      "over_1.5_HRR": 50.0,
+      "over_1.5_K": 40.0,
+      "over_1.5_HRR": 40.0,
       "games_considered": 10,
-      "player_id": 676356
+      "player_id": 669003
+    },
+    {
+      "player": "Jake Bauers (MIL)",
+      "over_0.5_H": 70.0,
+      "over_1.5_H": 10.0,
+      "over_0.5_K": 90.0,
+      "over_1.5_K": 70.0,
+      "over_1.5_HRR": 60.0,
+      "games_considered": 10,
+      "player_id": 641343
+    },
+    {
+      "player": "Freddie Freeman (LAD)",
+      "over_0.5_H": 40.0,
+      "over_1.5_H": 40.0,
+      "over_0.5_K": 90.0,
+      "over_1.5_K": 30.0,
+      "over_1.5_HRR": 40.0,
+      "games_considered": 10,
+      "player_id": 518692
+    },
+    {
+      "player": "Shohei Ohtani (LAD)",
+      "over_0.5_H": 60.0,
+      "over_1.5_H": 10.0,
+      "over_0.5_K": 80.0,
+      "over_1.5_K": 60.0,
+      "over_1.5_HRR": 20.0,
+      "games_considered": 10,
+      "player_id": 660271
+    },
+    {
+      "player": "Teoscar Hernández (LAD)",
+      "over_0.5_H": 80.0,
+      "over_1.5_H": 30.0,
+      "over_0.5_K": 90.0,
+      "over_1.5_K": 30.0,
+      "over_1.5_HRR": 70.0,
+      "games_considered": 10,
+      "player_id": 606192
     }
   ],
-  "hrr_qualifiers": [],
+  "hrr_qualifiers": [
+    {
+      "player": "Joey Ortiz (MIL)",
+      "over_0.5_H": 90.0,
+      "over_1.5_H": 20.0,
+      "over_0.5_K": 60.0,
+      "over_1.5_K": 40.0,
+      "over_1.5_HRR": 80.0,
+      "games_considered": 10,
+      "player_id": 687401
+    }
+  ],
   "parlay_suggestions": [
     {
-      "game": "Cleveland Guardians @ Tampa Bay Rays",
-      "avg_leg_hit_rate": 82.5,
+      "game": "Milwaukee Brewers @ Los Angeles Dodgers",
+      "avg_leg_hit_rate": 90.0,
       "legs": [
         {
-          "player": "Jonathan Aranda (TB)",
+          "player": "Joey Ortiz (MIL)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 90.0,
+          "games_considered": 10
+        },
+        {
+          "player": "William Contreras (MIL)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 90.0,
+          "games_considered": 10
+        },
+        {
+          "player": "Jake Bauers (MIL)",
           "prop": "Over 0.5 Strikeouts",
           "hit_rate": 90.0,
           "games_considered": 10
         },
         {
-          "player": "Brayan Rocchio (CLE)",
-          "prop": "Over 0.5 Hits",
-          "hit_rate": 80.0,
-          "games_considered": 10
-        },
-        {
-          "player": "Jo Adell (CLE)",
-          "prop": "Over 0.5 Hits",
-          "hit_rate": 80.0,
-          "games_considered": 10
-        },
-        {
-          "player": "Chandler Simpson (TB)",
-          "prop": "Over 0.5 Hits",
-          "hit_rate": 80.0,
+          "player": "Freddie Freeman (LAD)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 90.0,
           "games_considered": 10
         }
       ]
