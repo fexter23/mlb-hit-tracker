@@ -1,7 +1,37 @@
 {
-  "date": "2026-10-14",
-  "generated_at": "2026-10-14T11:16:03.785654",
+  "date": "2026-10-15",
+  "generated_at": "2026-10-15T10:55:02.987862",
   "hits_qualifiers": [
+    {
+      "player": "Chandler Simpson (TB)",
+      "over_0.5_H": 80.0,
+      "over_1.5_H": 40.0,
+      "over_0.5_K": 20.0,
+      "over_1.5_K": 0.0,
+      "over_1.5_HRR": 60.0,
+      "games_considered": 10,
+      "player_id": 802415
+    },
+    {
+      "player": "Brayan Rocchio (CLE)",
+      "over_0.5_H": 80.0,
+      "over_1.5_H": 30.0,
+      "over_0.5_K": 40.0,
+      "over_1.5_K": 0.0,
+      "over_1.5_HRR": 50.0,
+      "games_considered": 10,
+      "player_id": 677587
+    },
+    {
+      "player": "Jo Adell (CLE)",
+      "over_0.5_H": 80.0,
+      "over_1.5_H": 20.0,
+      "over_0.5_K": 60.0,
+      "over_1.5_K": 20.0,
+      "over_1.5_HRR": 60.0,
+      "games_considered": 10,
+      "player_id": 666176
+    },
     {
       "player": "Brice Turang (MIL)",
       "over_0.5_H": 80.0,
@@ -54,6 +84,26 @@
     }
   ],
   "strikeouts_qualifiers": [
+    {
+      "player": "Jonathan Aranda (TB)",
+      "over_0.5_H": 70.0,
+      "over_1.5_H": 0.0,
+      "over_0.5_K": 90.0,
+      "over_1.5_K": 60.0,
+      "over_1.5_HRR": 30.0,
+      "games_considered": 10,
+      "player_id": 666018
+    },
+    {
+      "player": "Jonny DeLuca (TB)",
+      "over_0.5_H": 70.0,
+      "over_1.5_H": 20.0,
+      "over_0.5_K": 80.0,
+      "over_1.5_K": 30.0,
+      "over_1.5_HRR": 50.0,
+      "games_considered": 10,
+      "player_id": 676356
+    },
     {
       "player": "Christian Yelich (MIL)",
       "over_0.5_H": 60.0,
@@ -154,6 +204,36 @@
           "player": "Freddie Freeman (LAD)",
           "prop": "Over 0.5 Strikeouts",
           "hit_rate": 90.0,
+          "games_considered": 10
+        }
+      ]
+    },
+    {
+      "game": "Tampa Bay Rays @ Cleveland Guardians",
+      "avg_leg_hit_rate": 82.5,
+      "legs": [
+        {
+          "player": "Jonathan Aranda (TB)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 90.0,
+          "games_considered": 10
+        },
+        {
+          "player": "Chandler Simpson (TB)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 80.0,
+          "games_considered": 10
+        },
+        {
+          "player": "Brayan Rocchio (CLE)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 80.0,
+          "games_considered": 10
+        },
+        {
+          "player": "Jo Adell (CLE)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 80.0,
           "games_considered": 10
         }
       ]
