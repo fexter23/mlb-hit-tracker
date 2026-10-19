@@ -1,17 +1,7 @@
 {
-  "date": "2026-10-18",
-  "generated_at": "2026-10-18T10:27:43.650662",
+  "date": "2026-10-19",
+  "generated_at": "2026-10-19T12:14:23.881211",
   "hits_qualifiers": [
-    {
-      "player": "Chandler Simpson (TB)",
-      "over_0.5_H": 80.0,
-      "over_1.5_H": 40.0,
-      "over_0.5_K": 20.0,
-      "over_1.5_K": 0.0,
-      "over_1.5_HRR": 60.0,
-      "games_considered": 10,
-      "player_id": 802415
-    },
     {
       "player": "Brayan Rocchio (CLE)",
       "over_0.5_H": 80.0,
@@ -31,6 +21,16 @@
       "over_1.5_HRR": 60.0,
       "games_considered": 10,
       "player_id": 666176
+    },
+    {
+      "player": "Chandler Simpson (TB)",
+      "over_0.5_H": 80.0,
+      "over_1.5_H": 40.0,
+      "over_0.5_K": 20.0,
+      "over_1.5_K": 0.0,
+      "over_1.5_HRR": 60.0,
+      "games_considered": 10,
+      "player_id": 802415
     }
   ],
   "strikeouts_qualifiers": [
@@ -58,19 +58,13 @@
   "hrr_qualifiers": [],
   "parlay_suggestions": [
     {
-      "game": "Tampa Bay Rays @ Cleveland Guardians",
+      "game": "Cleveland Guardians @ Tampa Bay Rays",
       "avg_leg_hit_rate": 82.5,
       "legs": [
         {
           "player": "Jonathan Aranda (TB)",
           "prop": "Over 0.5 Strikeouts",
           "hit_rate": 90.0,
-          "games_considered": 10
-        },
-        {
-          "player": "Chandler Simpson (TB)",
-          "prop": "Over 0.5 Hits",
-          "hit_rate": 80.0,
           "games_considered": 10
         },
         {
@@ -81,6 +75,12 @@
         },
         {
           "player": "Jo Adell (CLE)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 80.0,
+          "games_considered": 10
+        },
+        {
+          "player": "Chandler Simpson (TB)",
           "prop": "Over 0.5 Hits",
           "hit_rate": 80.0,
           "games_considered": 10
