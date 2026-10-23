@@ -1,27 +1,7 @@
 {
-  "date": "2026-10-19",
-  "generated_at": "2026-10-19T12:14:23.881211",
+  "date": "2026-10-23",
+  "generated_at": "2026-10-23T11:04:23.650074",
   "hits_qualifiers": [
-    {
-      "player": "Brayan Rocchio (CLE)",
-      "over_0.5_H": 80.0,
-      "over_1.5_H": 30.0,
-      "over_0.5_K": 40.0,
-      "over_1.5_K": 0.0,
-      "over_1.5_HRR": 50.0,
-      "games_considered": 10,
-      "player_id": 677587
-    },
-    {
-      "player": "Jo Adell (CLE)",
-      "over_0.5_H": 80.0,
-      "over_1.5_H": 20.0,
-      "over_0.5_K": 60.0,
-      "over_1.5_K": 20.0,
-      "over_1.5_HRR": 60.0,
-      "games_considered": 10,
-      "player_id": 666176
-    },
     {
       "player": "Chandler Simpson (TB)",
       "over_0.5_H": 80.0,
@@ -31,6 +11,36 @@
       "over_1.5_HRR": 60.0,
       "games_considered": 10,
       "player_id": 802415
+    },
+    {
+      "player": "Brice Turang (MIL)",
+      "over_0.5_H": 80.0,
+      "over_1.5_H": 30.0,
+      "over_0.5_K": 70.0,
+      "over_1.5_K": 60.0,
+      "over_1.5_HRR": 50.0,
+      "games_considered": 10,
+      "player_id": 668930
+    },
+    {
+      "player": "Joey Ortiz (MIL)",
+      "over_0.5_H": 90.0,
+      "over_1.5_H": 20.0,
+      "over_0.5_K": 60.0,
+      "over_1.5_K": 40.0,
+      "over_1.5_HRR": 80.0,
+      "games_considered": 10,
+      "player_id": 687401
+    },
+    {
+      "player": "William Contreras (MIL)",
+      "over_0.5_H": 90.0,
+      "over_1.5_H": 0.0,
+      "over_0.5_K": 60.0,
+      "over_1.5_K": 10.0,
+      "over_1.5_HRR": 60.0,
+      "games_considered": 10,
+      "player_id": 661388
     }
   ],
   "strikeouts_qualifiers": [
@@ -53,14 +63,67 @@
       "over_1.5_HRR": 50.0,
       "games_considered": 10,
       "player_id": 676356
+    },
+    {
+      "player": "Christian Yelich (MIL)",
+      "over_0.5_H": 60.0,
+      "over_1.5_H": 0.0,
+      "over_0.5_K": 80.0,
+      "over_1.5_K": 40.0,
+      "over_1.5_HRR": 60.0,
+      "games_considered": 10,
+      "player_id": 592885
+    },
+    {
+      "player": "Garrett Mitchell (MIL)",
+      "over_0.5_H": 60.0,
+      "over_1.5_H": 0.0,
+      "over_0.5_K": 80.0,
+      "over_1.5_K": 40.0,
+      "over_1.5_HRR": 40.0,
+      "games_considered": 10,
+      "player_id": 669003
+    },
+    {
+      "player": "Jake Bauers (MIL)",
+      "over_0.5_H": 70.0,
+      "over_1.5_H": 10.0,
+      "over_0.5_K": 90.0,
+      "over_1.5_K": 70.0,
+      "over_1.5_HRR": 60.0,
+      "games_considered": 10,
+      "player_id": 641343
     }
   ],
-  "hrr_qualifiers": [],
+  "hrr_qualifiers": [
+    {
+      "player": "Joey Ortiz (MIL)",
+      "over_0.5_H": 90.0,
+      "over_1.5_H": 20.0,
+      "over_0.5_K": 60.0,
+      "over_1.5_K": 40.0,
+      "over_1.5_HRR": 80.0,
+      "games_considered": 10,
+      "player_id": 687401
+    }
+  ],
   "parlay_suggestions": [
     {
-      "game": "Cleveland Guardians @ Tampa Bay Rays",
-      "avg_leg_hit_rate": 82.5,
+      "game": "Tampa Bay Rays @ Milwaukee Brewers",
+      "avg_leg_hit_rate": 90.0,
       "legs": [
+        {
+          "player": "Joey Ortiz (MIL)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 90.0,
+          "games_considered": 10
+        },
+        {
+          "player": "William Contreras (MIL)",
+          "prop": "Over 0.5 Hits",
+          "hit_rate": 90.0,
+          "games_considered": 10
+        },
         {
           "player": "Jonathan Aranda (TB)",
           "prop": "Over 0.5 Strikeouts",
@@ -68,21 +131,9 @@
           "games_considered": 10
         },
         {
-          "player": "Brayan Rocchio (CLE)",
-          "prop": "Over 0.5 Hits",
-          "hit_rate": 80.0,
-          "games_considered": 10
-        },
-        {
-          "player": "Jo Adell (CLE)",
-          "prop": "Over 0.5 Hits",
-          "hit_rate": 80.0,
-          "games_considered": 10
-        },
-        {
-          "player": "Chandler Simpson (TB)",
-          "prop": "Over 0.5 Hits",
-          "hit_rate": 80.0,
+          "player": "Jake Bauers (MIL)",
+          "prop": "Over 0.5 Strikeouts",
+          "hit_rate": 90.0,
           "games_considered": 10
         }
       ]
