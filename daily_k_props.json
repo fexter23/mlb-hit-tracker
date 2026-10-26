@@ -1,17 +1,7 @@
 {
-  "date": "2026-10-24",
-  "generated_at": "2026-10-24T10:20:48.221269",
+  "date": "2026-10-26",
+  "generated_at": "2026-10-26T12:19:14.706302",
   "hits_qualifiers": [
-    {
-      "player": "Chandler Simpson (TB)",
-      "over_0.5_H": 80.0,
-      "over_1.5_H": 40.0,
-      "over_0.5_K": 20.0,
-      "over_1.5_K": 0.0,
-      "over_1.5_HRR": 60.0,
-      "games_considered": 10,
-      "player_id": 802415
-    },
     {
       "player": "Brice Turang (MIL)",
       "over_0.5_H": 80.0,
@@ -41,29 +31,19 @@
       "over_1.5_HRR": 60.0,
       "games_considered": 10,
       "player_id": 661388
+    },
+    {
+      "player": "Chandler Simpson (TB)",
+      "over_0.5_H": 80.0,
+      "over_1.5_H": 40.0,
+      "over_0.5_K": 20.0,
+      "over_1.5_K": 0.0,
+      "over_1.5_HRR": 60.0,
+      "games_considered": 10,
+      "player_id": 802415
     }
   ],
   "strikeouts_qualifiers": [
-    {
-      "player": "Jonathan Aranda (TB)",
-      "over_0.5_H": 70.0,
-      "over_1.5_H": 0.0,
-      "over_0.5_K": 90.0,
-      "over_1.5_K": 60.0,
-      "over_1.5_HRR": 30.0,
-      "games_considered": 10,
-      "player_id": 666018
-    },
-    {
-      "player": "Jonny DeLuca (TB)",
-      "over_0.5_H": 70.0,
-      "over_1.5_H": 20.0,
-      "over_0.5_K": 80.0,
-      "over_1.5_K": 30.0,
-      "over_1.5_HRR": 50.0,
-      "games_considered": 10,
-      "player_id": 676356
-    },
     {
       "player": "Christian Yelich (MIL)",
       "over_0.5_H": 60.0,
@@ -93,6 +73,26 @@
       "over_1.5_HRR": 60.0,
       "games_considered": 10,
       "player_id": 641343
+    },
+    {
+      "player": "Jonathan Aranda (TB)",
+      "over_0.5_H": 70.0,
+      "over_1.5_H": 0.0,
+      "over_0.5_K": 90.0,
+      "over_1.5_K": 60.0,
+      "over_1.5_HRR": 30.0,
+      "games_considered": 10,
+      "player_id": 666018
+    },
+    {
+      "player": "Jonny DeLuca (TB)",
+      "over_0.5_H": 70.0,
+      "over_1.5_H": 20.0,
+      "over_0.5_K": 80.0,
+      "over_1.5_K": 30.0,
+      "over_1.5_HRR": 50.0,
+      "games_considered": 10,
+      "player_id": 676356
     }
   ],
   "hrr_qualifiers": [
@@ -109,7 +109,7 @@
   ],
   "parlay_suggestions": [
     {
-      "game": "Tampa Bay Rays @ Milwaukee Brewers",
+      "game": "Milwaukee Brewers @ Tampa Bay Rays",
       "avg_leg_hit_rate": 90.0,
       "legs": [
         {
@@ -125,13 +125,13 @@
           "games_considered": 10
         },
         {
-          "player": "Jonathan Aranda (TB)",
+          "player": "Jake Bauers (MIL)",
           "prop": "Over 0.5 Strikeouts",
           "hit_rate": 90.0,
           "games_considered": 10
         },
         {
-          "player": "Jake Bauers (MIL)",
+          "player": "Jonathan Aranda (TB)",
           "prop": "Over 0.5 Strikeouts",
           "hit_rate": 90.0,
           "games_considered": 10
